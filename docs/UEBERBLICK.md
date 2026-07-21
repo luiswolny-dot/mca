@@ -31,10 +31,10 @@ Rezept ausführt. Das *ist* die Verpackung.
 
 ```mermaid
 flowchart LR
-    subgraph W["👀 Beobachten"]
+    subgraph W["✅ Beobachten"]
         ING["ingest/<br/>hört der Blockchain zu"]
     end
-    subgraph M["🚧 Fehlt noch"]
+    subgraph M["✅ Prüfen & Bewerten"]
         ENR["enrich/<br/>ist der Coin sicher?"]
         SCO["scoring/<br/>Note 0–100 + Kauf-Empfehlung"]
     end
@@ -67,8 +67,8 @@ starten lässt, ohne die anderen mitzureißen.
 |---|---|---|
 | `domain/` | Definiert die Grundbegriffe — Position, Trade, Coin — auf denen alles andere aufbaut | ✅ |
 | `ingest/` | Hört der Solana-Blockchain zu, meldet neue Liquiditätspools | ✅ nur Solana |
-| `enrich/` | Prüft einen gemeldeten Coin: Mint-Rechte weg? Wale? LP gelockt? | 🚧 leer |
-| `scoring/` | Rechnet aus den Prüfungen eine Bewertung + entscheidet, ob der Erwartungswert positiv ist | ✅ Logik fertig, 🚧 kein Worker-Prozess |
+| `enrich/` | Prüft einen gemeldeten Coin: Mint-Rechte weg? Wale (Pool selbst ausgeschlossen)? Liquidität/Volumen via DexScreener | ✅ nur Solana, kein Social/Whale-Flow |
+| `scoring/` | Rechnet aus den Prüfungen eine Bewertung + EV-Entscheidung, mit selbst-aufwärmendem Vergleichs-Cohort | ✅ Trefferwahrscheinlichkeit bleibt neutral bis ein Modell trainiert ist |
 | `risk/` | Sagt Ja/Nein zum Kauf, abhängig vom Gesamtrisiko (Tagesverlust, offene Positionen, Circuit Breaker) | ✅ |
 | `execution/` | Führt Kauf/Verkauf auf der Blockchain aus, verwaltet den Schlüssel | ✅ nur Solana |
 | `portfolio/` | Verwaltet offene Positionen, entscheidet: jetzt (teilweise) verkaufen? | ✅ |
@@ -77,22 +77,28 @@ starten lässt, ohne die anderen mitzureißen.
 | `api/`, `dashboard.jsx` | Was du im Browser siehst und anklickst | 🚧 Grundgerüst |
 | `backtest/`, `ml/` | Historische Simulation + Trefferwahrscheinlichkeits-Modell | ✅ Logik, 🚧 kein Trainingsdatensatz |
 | `alerts/` | Telegram-Benachrichtigungen bei wichtigen Ereignissen | ✅ |
-| `tests/` | 133 automatische Prüfungen, laufen bei jeder Änderung | ✅ |
+| `tests/` | 158 automatische Prüfungen, laufen bei jeder Änderung | ✅ |
 
 ---
 
 ## Was passiert HEUTE wirklich, wenn du `./start.sh` ausführst?
 
-1. Postgres, Redis, Ingest, Risk Gate, Executor, Position Manager, Watchdog,
-  API und Dashboard starten — acht bis neun Programme, ein Befehl.
+1. Alle Programme starten — Ingest, Enrich, Scorer, Risk Gate, Executor,
+  Position Manager, Watchdog, API, Dashboard.
 2. Der Ingest-Prozess sieht neue Solana-Pools in Echtzeit.
-3. **Und dann passiert nichts weiter.** Der Weg von "neuer Pool entdeckt" zu
-  "kaufenswert oder nicht" führt durch `enrich/` und `scoring/` — die sind
-  die beiden leeren Ordner oben. Es wird also **nichts gekauft**, egal wie
-  lange der Bot läuft.
+3. Enrich prüft jeden gemeldeten Pool: Mint-Rechte weg? Liquidität hoch genug?
+  Wale? Score und Risk Gate entscheiden dann wirklich Ja/Nein.
+4. **Trotzdem wird faktisch nichts gekauft** — nicht weil ein Teil fehlt,
+  sondern weil `should_trade()` eine kalibrierte Trefferwahrscheinlichkeit
+  verlangt, und die kommt aus einem ML-Modell, das erst nach genug
+  abgeschlossenen Trades trainierbar ist. Ein frisch gestarteter Bot hat noch
+  keine — also lehnt jedes Signal ehrlich mit „no calibrated win probability"
+  ab, statt zu raten.
 
-Das ist Absicht, nicht ein Bug: lieber sichtbar nichts tun, als eine Lücke mit
-geratenem Code zu füllen, der dann beim ersten echten Geld überrascht.
+Der Weg vom „neuer Pool" zur „Kauf-Entscheidung" ist damit komplett — was
+fehlt, ist Erfahrung, kein Code. Das behebt sich von selbst, sobald über
+Paper-Trading genug abgeschlossene Positionen für das erste Modelltraining
+zusammenkommen (`ops/tasks.py`s `retrain_model_task`, täglich um 3 Uhr UTC).
 
 ---
 

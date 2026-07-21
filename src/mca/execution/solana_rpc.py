@@ -255,6 +255,28 @@ class SolanaRpcClient:
             await asyncio.sleep(poll_interval_s)
         raise TimeoutError(f"{signature} not confirmed within {timeout_s}s")
 
+    async def get_account_info_parsed(self, pubkey: str) -> dict | None:
+        """``getAccountInfo`` with ``jsonParsed`` encoding.
+
+        Deliberately not raw/base64 + a hand-rolled struct decoder: the RPC
+        node already knows how to parse both the classic SPL Token program's
+        fixed 82-byte Mint layout and Token-2022's extension-laden variable
+        layout. Re-implementing that byte-for-byte in this codebase, unable to
+        test it against a live account in this sandbox, would be exactly the
+        kind of unverifiable guess this project avoids for anything that
+        touches fund safety. Returns ``None`` if the account does not exist.
+        """
+        raw = await self._call("getAccountInfo", [pubkey, {"encoding": "jsonParsed"}])
+        value = parse_response(raw)["value"]
+        return value
+
+    async def get_token_largest_accounts(self, mint: str) -> list[dict]:
+        """Top 20 holder accounts for a mint, largest first. Standard,
+        long-stable Solana RPC method — used by ``enrich/onchain.py`` to
+        compute holder concentration."""
+        raw = await self._call("getTokenLargestAccounts", [mint])
+        return parse_response(raw)["value"]
+
     async def get_balance(self, pubkey: str, commitment: str = "confirmed") -> int:
         """Native SOL balance in lamports."""
         raw = await self._call("getBalance", [pubkey, {"commitment": commitment}])

@@ -19,7 +19,7 @@ Ehrlichkeit vor Vollständigkeit: ein produktionsreifes System dieser Art ist
 Monate Arbeit für ein kleines Team, vor allem wegen der Chain-Integrationen und
 der Datenbeschaffung. Was in diesem Repository steht, teilt sich so auf:
 
-### Vollständig implementiert und getestet (133 Unit-Tests, grün)
+### Vollständig implementiert und getestet (158 Unit-Tests, grün)
 
 | Modul | Inhalt |
 |---|---|
@@ -50,66 +50,57 @@ der Datenbeschaffung. Was in diesem Repository steht, teilt sich so auf:
 | `ops/watchdog.py` | Heartbeat-Überwachung, RPC-Health, HALT-Trigger, Risk-Event-Alerting |
 | `ops/tasks.py` | Celery: `roll_day`, Wallet-Sweep-Erkennung, Modell-Retraining |
 | `start.sh` | Ein-Kommando-Start: Secrets-Check, Config, Preflight-Tests, `docker compose up` |
+| `enrich/onchain.py` | Mint-/Freeze-Authority + Holder-Konzentration direkt per RPC, kein Drittanbieter |
+| `enrich/dexscreener.py` | Liquidität/Volumen/Preis — API-Shape gegen aktuelle Doku verifiziert (Stand 2026-07-21) |
+| `enrich/worker.py` | Pool-Event → vollständiger `Candidate`, fail-closed bei fehlenden Daten |
+| `scoring/worker.py` | `Candidate` → Score → EV-Entscheidung → `Signal`, mit selbst-aufwärmendem Cohort |
 
 **Nichts davon lief in dieser Sandbox gegen einen echten Endpoint** — kein
 Netzwerkzugriff im Build-Container. Jede Netzwerk-Funktion ist an der reinen
-Request/Response-Grenze mit Fixtures getestet; die Jupiter-API-Struktur wurde
-gegen aktuelle Dokumentation (Stand 2026-07-21) verifiziert, nicht nur aus dem
-Trainingsstand übernommen. Vor Live-Einsatz: gegen Devnet oder mit einem
-Trivialbetrag auf Mainnet verifizieren. `db/repository.py`s Queries zusätzlich:
-gegen echtes Postgres testen (`docker compose up -d postgres` + `schema.sql`),
-das gehört noch vor jeden produktiven Einsatz — auch Paper-Trading.
+Request/Response-Grenze mit Fixtures getestet; DexScreener- und Jupiter-API
+wurden gegen aktuelle Dokumentation verifiziert, nicht aus dem Trainingsstand
+übernommen. Vor Live-Einsatz: gegen Devnet/Mainnet-Trivialbetrag verifizieren.
+`db/repository.py`s Queries zusätzlich gegen echtes Postgres testen.
 
 ### Gerüst mit definierten Schnittstellen (Anbindung fehlt)
 
 `ingest/` EVM- und Social-Adapter, `execution/` Uniswap/PancakeSwap-Adapter,
 `api/` Endpunkt-Bodies (liest/schreibt noch nicht gegen `db/repository.py`),
-`enrich/` Holder-Analyse + DexScreener/Birdeye-Clients, `scoring/worker.py`
-(der Bus-Worker, der `Scorer.score()` aufruft und auf das in
-`risk/gate_service.py` definierte `SignalMessage`-Format publiziert).
+Whale-/Smart-Money-Flow (`FlowSnapshot` bleibt `None`, siehe `enrich/worker.py`s
+Kommentar), Social-Signale (`SocialSnapshot` bleibt `None`, `ingest-social`
+existiert nicht).
 
-Diese Services laufen in `docker-compose.yml` bewusst nicht im Default-Profil
-(`profiles: ["full"]`) — sie würden sonst crash-loopen statt einfach nichts zu
-tun, weil `ingest/runner.py` unbekannte Quellen laut ablehnt statt still zu
-schweigen. Das ist die richtige Fehlerbehandlung für eine unfertige
-Komponente, aber die falsche Default-Erfahrung für „einmal antippen und es
-läuft" — daher die Trennung. `docker compose --profile full up` schaltet sie
-explizit dazu.
+`docker compose --profile full up` schaltet die EVM-/Social-Ingest-Prozesse
+zusätzlich dazu (sie lehnen unbekannte Quellen laut ab statt zu crash-loopen —
+richtig, aber nicht die Default-Erfahrung).
 
-Ohne `enrich/` + `scoring/worker.py` fließen keine neuen Kandidaten durch die
-Pipeline — alles ab `risk/gate_service.py` abwärts ist fertig verdrahtet und
-wartet auf Nachrichten, die aktuell niemand publiziert. `portfolio/manager.py`s
-Exit-Loop arbeitet trotzdem schon live: sobald irgendeine Position existiert
-(z. B. manuell für einen Test angelegt), wertet er sie jeden Tick echt aus,
-inklusive einer echten Sell-Simulation als Struktur-Signal — nur der
-Liquiditäts-Drain-Check bleibt bis zur `enrich`-Anbindung deaktiviert (siehe
-Code-Kommentar in `portfolio/manager.py`, absichtlich kein Platzhalterwert).
+**Der Live-Pfad für Solana ist jetzt Ende-zu-Ende verdrahtet:** Ingest → Enrich
+→ Score → Risk Gate → Executor → Position Manager, jede Stufe über den Bus
+verbunden, jede Stufe einzeln getestet. Was fehlt, ist kein fehlendes Stück
+mehr, sondern fehlende Tiefe an zwei Stellen: `score.win_probability` bleibt
+`None` bis ein Modell trainiert ist (kein Trade ohne kalibrierte
+Erfolgswahrscheinlichkeit, siehe `should_trade()`), und Social/Flow-Signale
+fehlen als Score-Komponenten — beides degradiert ehrlich (neutral bzw. „nicht
+handelbar"), nichts wird geraten.
 
 ### In dieser Runde gefundene und behobene Inkonsistenzen
 
-- **`price_usd` war USD pro Base-Unit statt USD pro ganzem Token** — in
-  `_build_fill()` UND `quote()` von `execution/solana_executor.py`. Bei einem
-  9-Dezimalstellen-Token ein Faktor-10⁹-Fehler, der jede PnL- und
-  Stop-Loss-Berechnung stumm korrumpiert hätte. Aufgefallen beim Verdrahten der
-  DB-Schicht, gefixt mit einem dezimalstellen-bewussten Cache
-  (`_get_decimals()`, on-chain via `getTokenSupply`), zwei Regressionstests.
-- **`JupiterClient.mid_price()` hatte den gleichen Fehlertyp** — SOL (9
-  Dezimalstellen) gegen USDC (6) ohne Anpassung verglichen, macht den
-  Rückgabewert um Faktor 1000 falsch. Nie benutzt, nie getestet — ersetzt durch
-  `sol_usd_price()`, das die Dezimalstellen korrekt behandelt und tatsächlich
-  vom Position Manager verwendet wird.
-- **`LAMPORTS_PER_SOL` war in zwei Dateien dupliziert** — in `jupiter.py`
-  zentralisiert, `solana_executor.py` importiert es jetzt.
-- **Ein Bug, den ich selbst eingebaut und noch im selben Durchgang gefangen
-  habe**: ein früher Entwurf von `portfolio/manager.py` leitete `liquidity_usd`
-  aus `price_usd` ab — hätte den Liquiditäts-Drain-Exit lautlos wirkungslos
-  gemacht (Verhältnis immer ≈1, egal was mit der echten Poolliquidität passiert).
-  Ersetzt durch einen ehrlichen No-Signal-Default plus einer echten
-  Sell-Simulations-Probe für das Strukturprüfungs-Signal, das diese Komponente
-  tatsächlich verlässlich liefern kann.
-- `.env.example` und `config/prometheus.yml` waren seit Runde 1 in README bzw.
-  `docker-compose.yml` referenziert, aber nie angelegt — beide fehlten, beide
-  jetzt da.
+- **Top-Holder-Konzentration hätte ohne Ausschluss des Pool-Vaults auf jedem
+  einzigen frischen Launch ~90 % angezeigt** — der Pool selbst hält direkt
+  nach der Erstellung den Großteil der Supply, das ist keine Wal-Bewegung.
+  `PoolCreatedEvent` bekam ein `base_vault`-Feld (aus dem bereits vorhandenen,
+  aber ungenutzten `coin_vault`-Index), `enrich/onchain.py` schließt es explizit
+  aus. Test dokumentiert beide Fälle (mit/ohne Ausschluss).
+- **DexScreeners `liquidity.base`/`quote` sind dezimalstellen-angepasste
+  Werte, `MarketSnapshot.pool_reserve_base` erwartet rohe Base-Units** —
+  derselbe Fehlertyp wie die `price_usd`-Bugs aus der vorigen Runde, diesmal
+  vor dem Schreiben gefunden statt danach, weil gezielt danach gesucht wurde.
+  Regressionstest mit konkreten Zahlen.
+- Mint-Authority-Prüfung nutzt `getAccountInfo` mit `jsonParsed`-Encoding statt
+  eines selbstgeschriebenen Byte-Offset-Parsers — der RPC-Node kennt sowohl
+  das klassische SPL-Token- als auch das Token-2022-Layout korrekt, ein
+  handgeschriebener fixed-offset-Parser hätte bei Token-2022 (zunehmend
+  verbreitet) still falsche Werte geliefert statt sauber `None`.
 
 ---
 

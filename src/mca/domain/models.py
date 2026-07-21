@@ -282,6 +282,10 @@ class PoolCreatedEvent:
     initial_base_reserve: int | None = None
     initial_quote_reserve: int | None = None
     deployer: str | None = None
+    base_vault: str | None = None   # the pool's own token account — see enrich/onchain.py:
+                                     # excluded from top-holder checks, or the pool itself
+                                     # (which legitimately holds most of a fresh token's
+                                     # supply) would misreport as a 90%+ whale on every launch.
     correlation_id: str = field(default_factory=new_id)
 
 

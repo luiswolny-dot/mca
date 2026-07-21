@@ -35,7 +35,7 @@ def collect(module_names: list[str]) -> list[tuple[str, object]]:
 
 def main(argv: list[str]) -> int:
     modules = argv[1:] or ["tests.unit.test_core", "tests.unit.test_execution",
-                           "tests.unit.test_orchestration"]
+                           "tests.unit.test_orchestration", "tests.unit.test_enrich_scoring"]
     tests = collect(modules)
     failed: list[tuple[str, str]] = []
 

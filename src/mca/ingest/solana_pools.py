@@ -134,8 +134,10 @@ def extract_pool_from_transaction(tx: dict, dex: Dex, signature: str,
             from mca.execution.jupiter import WSOL_MINT
             if coin_mint == WSOL_MINT:
                 base_mint, quote_mint = pc_mint, coin_mint
+                base_vault = _pubkey_at(idx["pc_vault"])
             elif pc_mint == WSOL_MINT:
                 base_mint, quote_mint = coin_mint, pc_mint
+                base_vault = _pubkey_at(idx["coin_vault"])
             else:
                 log.debug("pool %s is not SOL-quoted, skipping", pool_addr)
                 return None
@@ -148,6 +150,7 @@ def extract_pool_from_transaction(tx: dict, dex: Dex, signature: str,
                 dex=dex, pool_address=pool_addr,
                 detected_at=detected_at or datetime.now(timezone.utc),
                 tx_signature=signature, block_or_slot=slot, deployer=deployer,
+                base_vault=base_vault,
             )
 
         log.debug("no extractor implemented for %s, skipping %s", dex.value, signature)
@@ -218,6 +221,7 @@ def _event_to_payload(event: PoolCreatedEvent) -> dict:
         "initial_base_reserve": event.initial_base_reserve,
         "initial_quote_reserve": event.initial_quote_reserve,
         "deployer": event.deployer,
+        "base_vault": event.base_vault,
         "correlation_id": event.correlation_id,
     }
 
@@ -233,5 +237,6 @@ def payload_to_event(payload: dict) -> PoolCreatedEvent:
         tx_signature=payload["tx_signature"], block_or_slot=payload["block_or_slot"],
         initial_base_reserve=payload.get("initial_base_reserve"),
         initial_quote_reserve=payload.get("initial_quote_reserve"),
-        deployer=payload.get("deployer"), correlation_id=payload["correlation_id"],
+        deployer=payload.get("deployer"), base_vault=payload.get("base_vault"),
+        correlation_id=payload["correlation_id"],
     )

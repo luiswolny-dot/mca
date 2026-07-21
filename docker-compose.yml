@@ -89,20 +89,21 @@ services:
     profiles: ["full"]
 
   # --- enrichment scales horizontally: stateless, CPU/IO bound -------------
-  # Also not yet implemented — see README.md. Profiled out for the same reason.
   enricher:
     <<: *python-base
     command: python -m mca.enrich.worker
-    profiles: ["full"]
     deploy:
       replicas: 4
+    restart: unless-stopped
 
   scorer:
     <<: *python-base
     command: python -m mca.scoring.worker
-    profiles: ["full"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
     deploy:
       replicas: 2
+    restart: unless-stopped
 
   # --- risk gate: EXACTLY ONE replica, by design ---------------------------
   # Scaling this to 2 reintroduces the race on "max open positions".
