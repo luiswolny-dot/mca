@@ -1,0 +1,27 @@
+# Minimal scrape config. Every mca service exposes /metrics on
+# observability.prometheus_port (default 9090, see config.example.yaml) once
+# a metrics endpoint is wired into core/ — not yet built, so these targets
+# will 404 until then. Listed anyway so `docker compose up` does not need a
+# second edit here the day metrics land; Prometheus tolerates unreachable
+# targets, it just marks them down in the UI instead of failing to start.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: mca-risk-gate
+    static_configs:
+      - targets: ["risk-gate:9090"]
+  - job_name: mca-executor
+    static_configs:
+      - targets: ["executor:9090"]
+  - job_name: mca-position-manager
+    static_configs:
+      - targets: ["position-manager:9090"]
+  - job_name: mca-api
+    static_configs:
+      - targets: ["api:9090"]
+  - job_name: mca-watchdog
+    static_configs:
+      - targets: ["watchdog:9090"]

@@ -1,0 +1,201 @@
+# ===========================================================================
+# Design decision: the executor is the ONLY container that mounts the keystore.
+# The API is the only container with an inbound port. Their intersection is
+# empty, so a remote-code-execution bug in FastAPI cannot reach signing keys.
+#
+# Design decision: no service uses `restart: always` for the executor. A crashed
+# executor must be looked at, not silently restarted into an unknown position
+# state. `on-failure:3` gives it three tries, then it stays down and pages you.
+# ===========================================================================
+name: mca
+
+x-python-base: &python-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  env_file: [.env]
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis:    { condition: service_healthy }
+  volumes:
+    - ./config:/app/config:ro
+  networks: [internal]
+  logging:
+    driver: json-file
+    options: { max-size: "50m", max-file: "5" }
+
+services:
+  postgres:
+    image: timescale/timescaledb:2.17.2-pg16
+    environment:
+      POSTGRES_DB: mca
+      POSTGRES_USER: mca
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Meme-coin tick ingestion is write-heavy; these are sized for a 16 GB host.
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    command: >
+      postgres -c shared_buffers=4GB -c effective_cache_size=12GB
+               -c maintenance_work_mem=1GB -c max_wal_size=8GB
+               -c random_page_cost=1.1 -c work_mem=32MB
+               -c max_connections=200 -c timescaledb.max_background_workers=8
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./src/mca/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mca -d mca"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks: [internal]
+
+  redis:
+    image: redis:7.4-alpine
+    # appendonly: the intent stream must survive a restart, or in-flight trade
+    # authorisations are lost and positions open without a matching record.
+    command: >
+      redis-server --appendonly yes --appendfsync everysec
+                   --maxmemory 4gb --maxmemory-policy noeviction
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks: [internal]
+
+  # --- ingestion: one process per source, isolated failure domains ----------
+  ingest-solana:
+    <<: *python-base
+    command: python -m mca.ingest.runner --source solana-geyser
+    restart: unless-stopped
+
+  # Not yet implemented (see README.md roadmap) — ingest/runner.py refuses
+  # these sources with a clear error rather than starting and doing nothing,
+  # which is correct but would crash-loop under the default profile. Start
+  # explicitly with `docker compose --profile full up` once they exist.
+  ingest-evm:
+    <<: *python-base
+    command: python -m mca.ingest.runner --source evm-logs --chains base,bsc
+    profiles: ["full"]
+
+  ingest-aggregators:
+    <<: *python-base
+    command: python -m mca.ingest.runner --source dexscreener,birdeye,geckoterminal
+    profiles: ["full"]
+
+  ingest-social:
+    <<: *python-base
+    command: python -m mca.ingest.runner --source twitter,telegram,reddit,trends
+    profiles: ["full"]
+
+  # --- enrichment scales horizontally: stateless, CPU/IO bound -------------
+  # Also not yet implemented — see README.md. Profiled out for the same reason.
+  enricher:
+    <<: *python-base
+    command: python -m mca.enrich.worker
+    profiles: ["full"]
+    deploy:
+      replicas: 4
+
+  scorer:
+    <<: *python-base
+    command: python -m mca.scoring.worker
+    profiles: ["full"]
+    deploy:
+      replicas: 2
+
+  # --- risk gate: EXACTLY ONE replica, by design ---------------------------
+  # Scaling this to 2 reintroduces the race on "max open positions".
+  risk-gate:
+    <<: *python-base
+    command: python -m mca.risk.gate_service
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
+    deploy:
+      replicas: 1
+    restart: unless-stopped
+
+  # --- executor: the only container with key material ----------------------
+  executor:
+    <<: *python-base
+    command: python -m mca.execution.worker
+    secrets: [keystore]
+    environment:
+      MCA_ROLE: executor
+      DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
+      WALLET_PUBKEY: ${WALLET_PUBKEY}
+      JUPITER_API_KEY: ${JUPITER_API_KEY:-}
+    deploy:
+      replicas: 1
+    restart: on-failure:3
+
+  position-manager:
+    <<: *python-base
+    command: python -m mca.portfolio.manager
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
+    restart: unless-stopped
+
+  celery-beat:
+    <<: *python-base
+    command: celery -A mca.ops.tasks beat --loglevel=INFO
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
+      WALLET_PUBKEY: ${WALLET_PUBKEY}
+    restart: unless-stopped
+
+  celery-worker:
+    <<: *python-base
+    command: celery -A mca.ops.tasks worker --loglevel=INFO -Q maintenance,ml
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
+      WALLET_PUBKEY: ${WALLET_PUBKEY}
+    restart: unless-stopped
+
+  # --- the only container with an inbound port -----------------------------
+  api:
+    <<: *python-base
+    command: uvicorn mca.api.app:app --host 0.0.0.0 --port 8000 --workers 2
+    ports: ["127.0.0.1:8000:8000"]   # bind to loopback; put a TLS proxy in front
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
+    restart: unless-stopped
+    networks: [internal, edge]
+
+  watchdog:
+    <<: *python-base
+    command: python -m mca.ops.watchdog
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    networks: [internal]
+
+  grafana:
+    image: grafana/grafana:11.5.1
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?set GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports: ["127.0.0.1:3001:3000"]
+    volumes: [grafanadata:/var/lib/grafana]
+    networks: [internal, edge]
+
+secrets:
+  keystore:
+    file: ./secrets/keystore.json     # scrypt-encrypted; chmod 600, never in git
+
+volumes:
+  pgdata:
+  redisdata:
+  promdata:
+  grafanadata:
+
+networks:
+  internal:
+    internal: true      # no egress path from the internal network
+  edge:

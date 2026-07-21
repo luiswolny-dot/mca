@@ -1,0 +1,201 @@
+# ===========================================================================
+# Meme-Coin Alpha — Beispielkonfiguration
+#
+# Kopieren nach config/config.yaml. Secrets stehen NICHT in dieser Datei,
+# sondern kommen aus Umgebungsvariablen bzw. dem Vault (siehe security:).
+#
+# Die Defaults sind bewusst konservativ. Jede Lockerung eines Wertes ändert den
+# strategy_hash und startet damit die Shadow-Trading-Frist neu.
+# ===========================================================================
+
+system:
+  mode: paper                 # backtest | paper | live  — live erfordert Shadow-Record
+  timezone: UTC               # niemals lokale Zeit: DST-Wechsel verschiebt Tageslimits
+  instance_name: mca-prod-1
+
+chains:
+  solana:
+    enabled: true
+    rpc_http: ${SOLANA_RPC_HTTP}        # dedizierter Node, kein öffentlicher Endpoint
+    rpc_ws: ${SOLANA_RPC_WS}
+    geyser_grpc: ${SOLANA_GEYSER}       # optional, deutlich schneller als logsSubscribe
+    quote_mint: So11111111111111111111111111111111111111112   # wSOL
+    priority_fee_micro_lamports: 250000
+    use_jito_bundles: false
+  base:
+    enabled: true
+    rpc_http: ${BASE_RPC_HTTP}
+    rpc_ws: ${BASE_RPC_WS}
+    quote_token: "0x4200000000000000000000000000000000000006"  # WETH
+  bsc:
+    enabled: false
+    rpc_http: ${BSC_RPC_HTTP}
+    quote_token: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"  # WBNB
+  ethereum:
+    enabled: false            # Gas macht Positionen unter ~5k USD unrentabel
+    rpc_http: ${ETH_RPC_HTTP}
+
+data_sources:
+  # rate_limit ist die tatsächlich gekaufte Quote, nicht der Wunsch.
+  # Der Client drosselt selbst; 429-Retries kosten mehr Zeit als Warten.
+  dexscreener:   { enabled: true,  rate_limit_per_min: 300 }
+  birdeye:       { enabled: true,  rate_limit_per_min: 100, api_key: ${BIRDEYE_KEY} }
+  geckoterminal: { enabled: true,  rate_limit_per_min: 30 }
+  coingecko:     { enabled: true,  rate_limit_per_min: 30,  api_key: ${COINGECKO_KEY} }
+  coinmarketcap: { enabled: false, api_key: ${CMC_KEY} }
+  twitter:       { enabled: true,  bearer: ${X_BEARER}, poll_s: 45 }
+  telegram:      { enabled: true,  api_id: ${TG_API_ID}, api_hash: ${TG_API_HASH} }
+  reddit:        { enabled: true,  client_id: ${REDDIT_ID}, secret: ${REDDIT_SECRET} }
+  discord:       { enabled: false, bot_token: ${DISCORD_TOKEN} }
+  google_trends: { enabled: true,  poll_s: 900 }
+
+  # Mindestens zwei unabhängige Quellen müssen Preis/Liquidität bestätigen,
+  # bevor ein Trade ausgelöst wird. Eine einzelne fehlerhafte API hat bei
+  # Meme-Coins schon ganze Bots leergeräumt.
+  min_confirming_sources: 2
+  max_source_disagreement_pct: 0.08
+
+# --- Hard Gates: reine Sicherheitsschwellen, kein Scoring -------------------
+gates:
+  min_liquidity_usd: 15000
+  max_liquidity_usd: 2000000
+  min_token_age_s: 180          # die ersten Minuten gehören den Snipern
+  max_token_age_s: 172800
+  require_mint_authority_revoked: true
+  require_freeze_authority_revoked: true
+  require_lp_locked_or_burned: true
+  min_lp_locked_pct: 0.90
+  min_lp_lock_remaining_s: 86400
+  max_buy_tax_bps: 500
+  max_sell_tax_bps: 500
+  require_sell_simulation: true
+  min_holders: 75
+  max_top1_holder_pct: 0.08
+  max_top10_holder_pct: 0.30
+  max_dev_holding_pct: 0.05
+  max_bundled_supply_pct: 0.25
+  max_insider_cluster_pct: 0.20
+  max_deployer_prior_rugs: 0
+  min_volume_5m_usd: 5000
+  min_unique_buyers_5m: 25
+  max_volume_to_liquidity_ratio: 25.0
+  allow_proxy_upgradeable: false
+  allow_blacklist_function: false
+
+# --- Scoring: Summe der weights MUSS 100 ergeben ---------------------------
+scoring:
+  weights:
+    liquidity_depth: 16
+    volume_momentum: 20
+    holder_dynamics: 14
+    smart_money_flow: 18
+    technicals: 15
+    social: 9
+    safety_margin: 8
+  min_score: 70
+  min_win_probability: 0.42
+  min_edge_bps: 250             # EV nach ALLEN Kosten, sonst kein Trade
+  social_max_bot_ratio: 0.55
+
+sizing:
+  max_risk_per_trade: 0.0075
+  max_notional_per_trade_usd: 750
+  max_impact_bps: 120
+  kelly_fraction: 0.25
+  kelly_hard_cap: 0.02
+  min_notional_usd: 25
+  atr_stop_multiple: 2.2
+  default_stop_pct: 0.25
+
+risk:
+  max_open_positions: 5
+  max_open_per_chain: 3
+  max_gross_exposure_pct: 0.15
+  max_daily_loss_pct: 0.06
+  max_weekly_loss_pct: 0.12
+  max_drawdown_pct: 0.20        # danach LOCKED, manueller Unlock nötig
+  max_consecutive_losses: 6
+  max_new_positions_per_hour: 12
+  min_seconds_between_entries: 20
+  max_exposure_single_token_pct: 0.04
+  cooldown_after_loss_s: 300
+
+exits:
+  hard_stop_pct: -0.25
+  break_even_trigger_pct: 0.30
+  break_even_offset_pct: 0.02
+  trailing_activate_pct: 0.45
+  trailing_atr_multiple: 2.5
+  trailing_min_pct: 0.18
+  trailing_max_pct: 0.45
+  time_stop_s: 2700
+  time_stop_min_progress_pct: 0.20
+  max_hold_s: 21600
+  liquidity_drop_exit_pct: 0.35
+  momentum_fade_bars: 5
+  social_fade_pct: 0.60
+  whale_exit_net_usd: -15000
+  ladder:                       # [Trigger, Anteil der URSPRÜNGLICHEN Größe]
+    - [0.45, 0.30]
+    - [1.00, 0.25]
+    - [2.00, 0.20]
+    - [4.00, 0.15]
+
+execution:
+  max_slippage_bps: 500
+  tx_timeout_s: 45
+  max_retries: 3
+  retry_backoff_s: 0.8
+  hot_wallet_max_usd: 2000      # mehr gehört nicht in einen Hot Wallet
+  sweep_threshold_usd: 1000
+  cold_wallet_address: ${COLD_WALLET}
+  min_shadow_days: 14           # Pflicht-Paper-Phase vor Live
+  min_shadow_trades: 100
+
+ml:
+  enabled: true
+  label_threshold: 0.0
+  purge_minutes: 360
+  embargo_minutes: 720
+  max_model_age_days: 21
+  min_train_samples: 800
+  min_auc: 0.56
+  max_brier: 0.24
+  retrain_cron: "0 3 * * *"
+
+backtest:
+  latency_median_ms: { solana: 900, base: 1400, bsc: 1800, ethereum: 3500 }
+  latency_sigma: 0.55
+  base_failure_rate: 0.06
+  congestion_failure_rate: 0.22
+  monte_carlo_runs: 2000
+  walk_forward_train_days: 30
+  walk_forward_test_days: 7
+
+security:
+  vault: env                    # env | hashicorp | aws-kms
+  keystore_path: /run/secrets/keystore
+  keystore_kdf: scrypt          # n=2^18, r=8, p=1
+  api_auth: jwt
+  api_rate_limit_per_min: 120
+  require_2fa_for_live_toggle: true
+
+alerts:
+  telegram: { enabled: true, bot_token: ${TG_BOT_TOKEN}, chat_id: ${TG_CHAT_ID} }
+  discord:  { enabled: true, webhook_url: ${DISCORD_WEBHOOK} }
+  email:    { enabled: false, smtp_host: ${SMTP_HOST}, to: ${ALERT_EMAIL} }
+  push:     { enabled: false, ntfy_topic: ${NTFY_TOPIC} }
+  # Alarm-Müdigkeit ist ein reales Sicherheitsrisiko: wer 200 Meldungen pro Tag
+  # bekommt, liest die eine wichtige nicht.
+  levels:
+    critical: [telegram, discord, email]   # Circuit Breaker, Honeypot, Wallet
+    warning:  [telegram]                   # Exit-Fehler, Datenquelle down
+    info:     []                           # nur Dashboard und Log
+
+observability:
+  log_level: INFO
+  log_format: json
+  prometheus_port: 9090
+  otel_endpoint: ${OTEL_ENDPOINT}
+  watchdog_heartbeat_s: 15
+  watchdog_missed_beats_before_halt: 4

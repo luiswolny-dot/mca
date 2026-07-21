@@ -1,0 +1,91 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mca"
+version = "0.1.0"
+description = "Meme-Coin Alpha — event-driven multi-chain trading system"
+requires-python = ">=3.12"
+readme = "README.md"
+
+# Core dependencies only. The scorer, risk gate and backtester deliberately do
+# not import web3/solders — a worker that cannot construct a transaction cannot
+# accidentally send one.
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "redis[hiredis]>=5.2",
+    "celery[redis]>=5.4",
+    "httpx[http2]>=0.28",
+    "numpy>=2.1",
+    "pandas>=2.2",
+    "orjson>=3.10",
+    "structlog>=24.4",
+    "prometheus-client>=0.21",
+    "pyyaml>=6.0",
+    "websockets>=14.1",
+    "cryptography>=44.0",
+]
+
+[project.optional-dependencies]
+ml = [
+    "scikit-learn>=1.6",
+    "scipy>=1.14",
+    "xgboost>=2.1",
+    "joblib>=1.4",
+]
+chains = [
+    "web3>=7.6",
+    "solders>=0.23",
+    "solana>=0.35",
+    "base58>=2.1",
+]
+social = [
+    "tweepy>=4.14",
+    "telethon>=1.38",
+    "asyncpraw>=7.8",
+    "pytrends>=4.9",
+]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "pytest-cov>=6.0",
+    "hypothesis>=6.122",
+    "ruff>=0.8",
+    "mypy>=1.14",
+    "types-pyyaml",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF", "ASYNC", "S"]
+ignore = ["S101"]   # assert is fine in tests
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+# The risk modules are where a type error costs money. No exceptions there.
+[[tool.mypy.overrides]]
+module = ["mca.risk.*", "mca.scoring.*", "mca.portfolio.*"]
+disallow_any_explicit = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --strict-markers"
+markers = [
+    "integration: needs postgres+redis",
+    "chain: needs a live RPC endpoint",
+]

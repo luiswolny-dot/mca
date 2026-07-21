@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+config/config.yaml
+secrets/
+*.egg-info/
+.pytest_cache/
+node_modules/
