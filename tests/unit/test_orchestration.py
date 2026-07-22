@@ -211,7 +211,7 @@ def test_signal_message_round_trip():
 # --------------------------------------------------------------------------- #
 
 from mca.execution.base import ExecutionConfig
-from mca.execution.jupiter import parse_quote_response
+from mca.execution.jupiter import parse_quote_response, WSOL_MINT
 from mca.execution.solana_executor import SolanaJupiterExecutor, _PreparedSwap
 
 
