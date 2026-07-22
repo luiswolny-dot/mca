@@ -260,3 +260,40 @@ class PositionManager:
         price = await jupiter.sol_usd_price()
         self._sol_usd_price_cache[chain] = price
         return price
+
+
+# --------------------------------------------------------------------------- #
+# Entry point — `python -m mca.portfolio.manager`, per docker-compose.yml.
+# Missing through the first Docker run; see risk/gate_service.py's entry
+# point for the full story (clean exit, RestartCount climbing, empty logs).
+# --------------------------------------------------------------------------- #
+
+async def _main() -> None:
+    import os
+    import logging
+
+    from mca.core.config import load_config
+    from mca.execution.base import strategy_fingerprint
+    from mca.execution.worker import build_solana_stack
+
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+    cfg = load_config()
+    mode = TradeMode(cfg.system.mode)
+    exec_cfg = cfg.to_execution_config(Chain.SOLANA)
+    strategy_hash = strategy_fingerprint(cfg.model_dump())
+
+    executor, rpc, jupiter = build_solana_stack(mode, exec_cfg)
+    bus = Bus(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
+    repo = Repository(os.environ["DATABASE_URL"])
+
+    manager = PositionManager(bus, repo, executors={Chain.SOLANA: executor},
+                              jupiter_by_chain={Chain.SOLANA: jupiter},
+                              exit_cfg=cfg.to_exit_config(), mode=mode, strategy_hash=strategy_hash)
+    await manager.run()
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(_main())

@@ -171,3 +171,32 @@ class EnrichWorker:
         log.info("candidate published token=%s liquidity=$%.0f mint_revoked=%s top10=%s",
                 event.token.key, market.liquidity_usd, security.mint_authority_revoked,
                 security.top10_holder_pct)
+
+
+# --------------------------------------------------------------------------- #
+# Entry point — `python -m mca.enrich.worker`, per docker-compose.yml.
+# Missing through the first Docker run; see risk/gate_service.py's entry
+# point for the full story.
+# --------------------------------------------------------------------------- #
+
+async def _main() -> None:
+    import os
+    import logging
+
+    from mca.enrich.dexscreener import DexScreenerClient
+    from mca.execution.solana_rpc import SolanaRpcClient
+
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+    bus = Bus(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
+    rpc = SolanaRpcClient(os.environ["SOLANA_RPC_HTTP"])
+    dexscreener = DexScreenerClient()
+
+    worker = EnrichWorker(bus, rpc, dexscreener)
+    await worker.run()
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(_main())

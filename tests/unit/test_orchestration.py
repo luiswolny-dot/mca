@@ -298,6 +298,80 @@ async def test_quote_buy_returns_usd_per_whole_token():
 
 
 # --------------------------------------------------------------------------- #
+# execution.base — PaperExecutor, previously a stub (quote()/submit() both
+# raised NotImplementedError). portfolio/manager.py's exit loop calls
+# quote() on whichever executor is configured every tick — in the default
+# (paper) mode that is PaperExecutor, so the stub was a guaranteed crash on
+# the very first tick. Found running this against real Docker for the first
+# time; these tests are the regression coverage that should have existed
+# before that, not after.
+# --------------------------------------------------------------------------- #
+
+from mca.execution.base import PaperExecutor
+
+
+class _FakeJupiterForPaper:
+    def __init__(self, out_amount: int):
+        self.out_amount = out_amount
+
+    async def quote(self, input_mint, output_mint, amount, slippage_bps):
+        raw = {"inputMint": input_mint, "inAmount": str(amount), "outputMint": output_mint,
+              "outAmount": str(self.out_amount), "otherAmountThreshold": "1",
+              "swapMode": "ExactIn", "slippageBps": slippage_bps,
+              "priceImpactPct": "0.01", "routePlan": []}
+        return parse_quote_response(raw)
+
+
+class _FakeRpcForPaper:
+    async def get_token_supply(self, mint):
+        return {"decimals": 9}
+
+
+async def test_paper_executor_quote_buy_matches_live_executor_convention():
+    """Same $150/SOL, same 50e9-base-unit-per-0.1-SOL fixture as the live
+    executor's test above — must produce the identical $0.30/whole-token
+    price. Two executors silently disagreeing on unit convention would be
+    exactly the kind of bug this project has repeatedly caught elsewhere."""
+    ex = PaperExecutor(Chain.SOLANA, ExecutionConfig(), _FakeJupiterForPaper(50_000_000_000),
+                       _FakeRpcForPaper(), WSOL_MINT)
+    ex.quote_usd_price = Decimal("150")
+    price, slippage = await ex.quote(TOK, Side.BUY, Decimal("0.1"))
+    assert abs(price - Decimal("0.30")) < Decimal("0.0001")
+    assert slippage == 100
+
+
+async def test_paper_executor_quote_without_price_raises_not_silently_wrong():
+    ex = PaperExecutor(Chain.SOLANA, ExecutionConfig(), _FakeJupiterForPaper(1), _FakeRpcForPaper(), WSOL_MINT)
+    try:
+        await ex.quote(TOK, Side.BUY, Decimal("0.1"))
+        raise AssertionError("should have raised")
+    except MissingReferencePrice:
+        pass
+
+
+async def test_paper_executor_submit_produces_a_real_fill_not_notimplementederror():
+    ex = PaperExecutor(Chain.SOLANA, ExecutionConfig(), _FakeJupiterForPaper(50_000_000_000),
+                       _FakeRpcForPaper(), WSOL_MINT)
+    ex.quote_usd_price = Decimal("150")
+    intent = _intent(side=Side.BUY, quote_amount=Decimal("0.1"))
+    fill = await ex.submit(intent)
+    assert fill.tx_hash.startswith("PAPER-")
+    assert fill.base_amount > 0
+    assert fill.price_usd > 0
+
+
+async def test_paper_executor_submit_sell_computes_proceeds_in_sol():
+    ex = PaperExecutor(Chain.SOLANA, ExecutionConfig(), _FakeJupiterForPaper(1_500_000_000),
+                       _FakeRpcForPaper(), WSOL_MINT)   # 1.5 SOL back
+    ex.quote_usd_price = Decimal("150")
+    intent = _intent(side=Side.SELL, base_amount=50_000_000_000)
+    fill = await ex.submit(intent)
+    assert fill.side is Side.SELL
+    assert fill.quote_amount > 0
+    assert fill.base_amount == 50_000_000_000
+
+
+# --------------------------------------------------------------------------- #
 # ops.watchdog — pure health-decision function
 # --------------------------------------------------------------------------- #
 

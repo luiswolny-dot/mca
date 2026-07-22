@@ -211,3 +211,46 @@ class RiskGateService:
         log.warning("risk state %s -> %s: %s", old_state.value, new_state.value, reason)
         if self.notifier is not None:
             await self.notifier.send(circuit_breaker_tripped(new_state.value, reason, float(equity_usd)))
+
+
+# --------------------------------------------------------------------------- #
+# Entry point — `python -m mca.risk.gate_service`, per docker-compose.yml.
+#
+# Missing through the first Docker run of this project: the module defined
+# the class but nothing that actually constructed and ran one. `python -m`
+# imported the module, found nothing to execute, and exited 0 — which Docker's
+# `restart: unless-stopped` policy then restarted immediately, forever,
+# without ever logging an error (there was nothing to fail). Found by
+# `docker inspect` showing RestartCount: 66 with ExitCode: 0 and empty logs —
+# a clean exit, not a crash, is its own diagnosis once you know to look for it.
+# --------------------------------------------------------------------------- #
+
+async def _main() -> None:
+    import os
+    from mca.core.config import load_config
+    from mca.execution.base import strategy_fingerprint
+
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+    cfg = load_config()
+    bus = Bus(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
+    repo = Repository(os.environ["DATABASE_URL"])
+    mode = TradeMode(cfg.system.mode)
+    strategy_hash = strategy_fingerprint(cfg.model_dump())
+
+    from mca.alerts.notifier import Notifier
+    from mca.alerts.telegram import telegram_channel
+    notifier = None
+    tg_token, tg_chat = os.environ.get("TG_BOT_TOKEN"), os.environ.get("TG_CHAT_ID")
+    if tg_token and tg_chat:
+        notifier = Notifier([telegram_channel(tg_token, tg_chat)])
+
+    service = RiskGateService(bus, repo, limits=cfg.to_risk_limits(), sizing_cfg=cfg.to_sizing_config(),
+                              mode=mode, strategy_hash=strategy_hash, notifier=notifier)
+    await service.run()
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(_main())

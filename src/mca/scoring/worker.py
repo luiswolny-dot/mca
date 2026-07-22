@@ -158,3 +158,38 @@ def _quote_usd_price(cand: Candidate):
         base_per_quote = Decimal(cand.market.pool_reserve_base) / Decimal(cand.market.pool_reserve_quote)
         return cand.market.price_usd * base_per_quote
     return Decimal(0)
+
+
+# --------------------------------------------------------------------------- #
+# Entry point — `python -m mca.scoring.worker`, per docker-compose.yml.
+# Missing through the first Docker run; see risk/gate_service.py's entry
+# point for the full story.
+# --------------------------------------------------------------------------- #
+
+async def _main() -> None:
+    import os
+    import logging
+
+    from mca.core.config import load_config
+    from mca.execution.base import strategy_fingerprint
+
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+    cfg = load_config()
+    bus = Bus(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
+    mode = TradeMode(cfg.system.mode)
+    strategy_hash = strategy_fingerprint(cfg.model_dump())
+
+    # No trained model yet on a fresh deployment — see ops/tasks.py's
+    # retrain_model_task, which produces one once enough paper trades exist.
+    # win_probability legitimately stays None until then; should_trade()
+    # already refuses to trade on a None probability rather than guessing.
+    worker = ScoringWorker(bus, scorer_cfg=cfg.to_scorer_config(), model=None,
+                           mode=mode, strategy_hash=strategy_hash)
+    await worker.run()
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(_main())

@@ -37,8 +37,9 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 
 from mca.domain.models import (
-    Chain, Dex, Fill, Side, TokenRef, TradeIntent, TradeMode, utcnow,
+    Chain, Dex, Fill, Side, TokenRef, TradeIntent, TradeMode, new_id, utcnow,
 )
+from mca.execution.jupiter import LAMPORTS_PER_SOL
 
 log = logging.getLogger(__name__)
 
@@ -60,6 +61,14 @@ class FatalExecutionError(ExecutionError):
     tolerance exceeded, a honeypot caught by round-trip simulation. Retrying
     these burns 3 backoff cycles — several seconds — for zero benefit, and in
     the honeypot case actively delays the moment we know to walk away."""
+
+
+class MissingReferencePrice(FatalExecutionError):
+    """Raised when an executor is asked to quote/trade without a USD
+    reference price set. Both ``SolanaJupiterExecutor`` and ``PaperExecutor``
+    raise this — defined once here rather than in one and imported by the
+    other, which would create a circular import (``base.py`` cannot import
+    from ``solana_executor.py``, which itself imports from ``base.py``)."""
 
 
 class ModeViolation(ExecutionError):
@@ -196,22 +205,85 @@ class PaperExecutor(Executor):
     identical slippage model as the backtester, and writes to the identical
     positions table with ``mode='paper'``. That is what makes the shadow record
     meaningful as a gate on live trading.
+
+    ``quote()``/``submit()`` were left as stubs through the first build rounds
+    ("wire to Jupiter/0x quote API") since nothing called them yet. Once
+    ``portfolio/manager.py``'s exit loop started calling ``quote()`` directly
+    on whichever executor is configured, that stub became a live
+    ``NotImplementedError`` in the default (paper) mode — found running this
+    against real Docker for the first time, exactly the kind of gap the
+    "never verified end-to-end" caveat in this project's docs was warning
+    about. Implemented here using the same decimals-aware, USD-per-whole-token
+    convention already fixed once in ``solana_executor.py`` — deliberately
+    the same shape, not reinvented, so there is one unit convention to get
+    right instead of two.
     """
 
-    def __init__(self, chain: Chain, cfg: ExecutionConfig, fill_model=None) -> None:
+    def __init__(self, chain: Chain, cfg: ExecutionConfig, jupiter, rpc,
+                quote_mint: str, fill_model=None) -> None:
         super().__init__(chain, TradeMode.PAPER, cfg)
         from mca.backtest.fill_model import FillModel
         self.fill_model = fill_model or FillModel()
+        self.jupiter = jupiter
+        self.rpc = rpc
+        self.quote_mint = quote_mint
+        self.quote_usd_price: Decimal | None = None
+        self._decimals_cache: dict[str, int] = {}
 
-    async def quote(self, token, side, amount):
-        raise NotImplementedError("wire to Jupiter/0x quote API")
+    async def _get_decimals(self, mint: str) -> int:
+        if mint not in self._decimals_cache:
+            supply = await self.rpc.get_token_supply(mint)
+            self._decimals_cache[mint] = int(supply["decimals"])
+        return self._decimals_cache[mint]
+
+    async def quote(self, token: TokenRef, side: Side, amount: Decimal) -> tuple[Decimal, int]:
+        if self.quote_usd_price is None:
+            raise MissingReferencePrice("quote_usd_price not set")
+        decs = Decimal(10) ** await self._get_decimals(token.address)
+        if side is Side.BUY:
+            lamports = int(amount * LAMPORTS_PER_SOL)
+            q = await self.jupiter.quote(self.quote_mint, token.address, lamports, 100)
+            whole_tokens = Decimal(q.out_amount) / decs
+            price_usd = (amount * self.quote_usd_price) / max(whole_tokens, Decimal("1e-18"))
+        else:
+            base_units = int(amount)
+            q = await self.jupiter.quote(token.address, self.quote_mint, base_units, 100)
+            proceeds_sol = Decimal(q.out_amount) / LAMPORTS_PER_SOL
+            whole_tokens = amount / decs
+            price_usd = (proceeds_sol * self.quote_usd_price) / max(whole_tokens, Decimal("1e-18"))
+        return price_usd, q.slippage_bps
 
     async def simulate(self, intent):
         return True, "paper"
 
     async def submit(self, intent: TradeIntent) -> Fill:
-        raise NotImplementedError(
-            "wire to the live price feed, then delegate to FillModel.simulate()")
+        """Simulated fill: get a real live price via ``quote()``, then run it
+        through ``FillModel`` for slippage/latency — the same model the
+        backtester uses, so paper and backtest results are comparable."""
+        price_usd, slippage_bps = await self.quote(
+            intent.token, intent.side,
+            intent.quote_amount if intent.side is Side.BUY else Decimal(intent.base_amount or 0))
+        decs = Decimal(10) ** await self._get_decimals(intent.token.address)
+
+        if intent.side is Side.BUY:
+            quote_amount = intent.quote_amount or Decimal(0)
+            whole_tokens = (quote_amount * self.quote_usd_price) / max(price_usd, Decimal("1e-18"))
+            base_amount = int(whole_tokens * decs)
+        else:
+            base_amount = intent.base_amount or 0
+            whole_tokens = Decimal(base_amount) / decs
+            quote_amount = (whole_tokens * price_usd) / max(self.quote_usd_price, Decimal("1e-18"))
+
+        fill_price = self.fill_model.apply_slippage(price_usd, intent.side, slippage_bps) \
+            if hasattr(self.fill_model, "apply_slippage") else price_usd
+
+        return Fill(
+            fill_id=new_id(), intent_id=intent.intent_id, token=intent.token,
+            side=intent.side, base_amount=base_amount, quote_amount=quote_amount,
+            price_usd=fill_price, tx_hash=f"PAPER-{new_id()}", block_or_slot=0,
+            gas_or_fee_usd=Decimal("0.000005") * self.quote_usd_price, slippage_bps=slippage_bps,
+            filled_at=utcnow(),
+        )
 
 
 class LiveExecutorGuard:

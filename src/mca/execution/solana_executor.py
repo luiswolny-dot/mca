@@ -35,7 +35,7 @@ from mca.domain.models import (
 )
 from mca.execution.base import (
     Executor, ExecutionConfig, ExecutionError, FatalExecutionError,
-    LiveExecutorGuard, RetryableExecutionError, ShadowRecord,
+    LiveExecutorGuard, MissingReferencePrice, RetryableExecutionError, ShadowRecord,
 )
 from mca.execution.jupiter import (
     LAMPORTS_PER_SOL, JupiterClient, JupiterError, JupiterTransportError,
@@ -59,11 +59,6 @@ SOLANA_BASE_FEE_LAMPORTS = 5_000     # the fixed signature fee, on top of priori
 HONEYPOT_LOSS_THRESHOLD = 0.60
 
 
-class MissingReferencePrice(FatalExecutionError):
-    """No SOL/USD price has been supplied. Raised before any network call, so
-    that "we cannot price this trade" never turns into "we made this trade and
-    do not know what it cost." See :attr:`SolanaJupiterExecutor.quote_usd_price`.
-    """
 
 
 @dataclass(slots=True)

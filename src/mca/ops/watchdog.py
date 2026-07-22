@@ -187,3 +187,45 @@ class Watchdog:
             severity, f"Risk event: {event}",
             "\n".join(f"{k}: {v}" for k, v in payload.items() if k != "event"),
             dedup_key=f"risk-event:{event}:{payload.get('token', '')}"))
+
+
+# --------------------------------------------------------------------------- #
+# Entry point — `python -m mca.ops.watchdog`, per docker-compose.yml.
+# Missing through the first Docker run; see risk/gate_service.py's entry
+# point for the full story.
+# --------------------------------------------------------------------------- #
+
+async def _main() -> None:
+    import os
+    import logging
+
+    from mca.core.config import load_config
+    from mca.db.repository import Repository
+    from mca.execution.solana_rpc import SolanaRpcClient
+
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+
+    cfg = load_config()
+    bus = Bus(os.environ.get("REDIS_URL", "redis://redis:6379/0"))
+    repo = Repository(os.environ["DATABASE_URL"])
+    rpc = SolanaRpcClient(os.environ["SOLANA_RPC_HTTP"]) if os.environ.get("SOLANA_RPC_HTTP") else None
+
+    notifier = None
+    from mca.alerts.notifier import Notifier
+    from mca.alerts.telegram import telegram_channel
+    tg_token, tg_chat = os.environ.get("TG_BOT_TOKEN"), os.environ.get("TG_CHAT_ID")
+    if tg_token and tg_chat:
+        notifier = Notifier([telegram_channel(tg_token, tg_chat)])
+
+    watchdog = Watchdog(bus, repo, rpc, notifier,
+                        check_interval_s=float(cfg.observability.watchdog_heartbeat_s)
+                        if hasattr(cfg, "observability") else 15.0,
+                        missed_beats_before_halt=cfg.observability.watchdog_missed_beats_before_halt
+                        if hasattr(cfg, "observability") else 4)
+    await watchdog.run()
+
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(_main())
