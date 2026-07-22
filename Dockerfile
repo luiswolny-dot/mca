@@ -50,6 +50,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
 WORKDIR /app
 COPY --chown=mca:mca src/ ./src/
 COPY --chown=mca:mca scripts/ ./scripts/
+RUN mkdir -p /app/var && chown mca:mca /app/var
 ENV PYTHONPATH=/app/src
 
 USER mca
