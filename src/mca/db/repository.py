@@ -191,16 +191,30 @@ def consecutive_losses(closed_positions_newest_first: list[Mapping[str, Any]]) -
 SQLALCHEMY_AVAILABLE = True
 try:
     import sqlalchemy as sa
+    from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
     from sqlalchemy.dialects.postgresql import JSONB, UUID
     from sqlalchemy.dialects.postgresql import insert as pg_insert
     from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
     metadata = sa.MetaData()
 
+    # Native Postgres ENUM types (created by schema.sql, not by SQLAlchemy —
+    # hence create_type=False). Columns holding these MUST use this type
+    # rather than sa.Text: asyncpg/SQLAlchemy renders bind parameters with an
+    # explicit ``::VARCHAR`` cast for plain Text columns, and Postgres has no
+    # ``enum = varchar`` operator, so every comparison against a Text-typed
+    # enum column raises ``UndefinedFunctionError`` at the DB layer.
+    chain_t = PG_ENUM(*[c.value for c in Chain], name="chain_t", create_type=False)
+    trade_mode_t = PG_ENUM(*[m.value for m in TradeMode], name="trade_mode_t", create_type=False)
+    side_t = PG_ENUM("buy", "sell", name="side_t", create_type=False)
+    position_status_t = PG_ENUM(
+        *[s.value for s in PositionStatus], name="position_status_t", create_type=False)
+    risk_state_t_type = PG_ENUM(*[s.value for s in RiskState], name="risk_state_t", create_type=False)
+
     tokens_t = sa.Table(
         "tokens", metadata,
         sa.Column("id", sa.BigInteger, primary_key=True),
-        sa.Column("chain", sa.Text), sa.Column("address", sa.Text),
+        sa.Column("chain", chain_t), sa.Column("address", sa.Text),
         sa.Column("symbol", sa.Text), sa.Column("name", sa.Text),
         sa.Column("decimals", sa.SmallInteger),
         sa.Column("created_on_chain_at", sa.DateTime(timezone=True)),
@@ -212,7 +226,7 @@ try:
         "signals", metadata,
         sa.Column("id", sa.BigInteger, primary_key=True),
         sa.Column("token_id", sa.BigInteger), sa.Column("as_of", sa.DateTime(timezone=True)),
-        sa.Column("mode", sa.Text), sa.Column("score_total", sa.Float),
+        sa.Column("mode", trade_mode_t), sa.Column("score_total", sa.Float),
         sa.Column("components", JSONB), sa.Column("weights", JSONB), sa.Column("gates", JSONB),
         sa.Column("gates_passed", sa.Boolean),
         sa.Column("failed_gates", sa.ARRAY(sa.Text)),
@@ -226,7 +240,7 @@ try:
         "positions", metadata,
         sa.Column("id", UUID, primary_key=True),
         sa.Column("token_id", sa.BigInteger), sa.Column("signal_id", sa.BigInteger),
-        sa.Column("mode", sa.Text), sa.Column("status", sa.Text),
+        sa.Column("mode", trade_mode_t), sa.Column("status", position_status_t),
         sa.Column("strategy_hash", sa.Text),
         sa.Column("opened_at", sa.DateTime(timezone=True)),
         sa.Column("closed_at", sa.DateTime(timezone=True)),
@@ -243,7 +257,7 @@ try:
         "fills", metadata,
         sa.Column("id", UUID, primary_key=True), sa.Column("position_id", UUID),
         sa.Column("intent_id", UUID), sa.Column("idempotency_key", sa.Text),
-        sa.Column("token_id", sa.BigInteger), sa.Column("side", sa.Text), sa.Column("mode", sa.Text),
+        sa.Column("token_id", sa.BigInteger), sa.Column("side", side_t), sa.Column("mode", trade_mode_t),
         sa.Column("base_amount", sa.Numeric(78, 0)), sa.Column("quote_amount_usd", sa.Numeric(24, 6)),
         sa.Column("price_usd", sa.Numeric(36, 18)), sa.Column("slippage_bps", sa.Float),
         sa.Column("gas_or_fee_usd", sa.Numeric(24, 6)), sa.Column("tx_hash", sa.Text),
@@ -254,7 +268,7 @@ try:
     risk_state_t = sa.Table(
         "risk_state", metadata,
         sa.Column("id", sa.SmallInteger, primary_key=True),
-        sa.Column("state", sa.Text), sa.Column("reason", sa.Text),
+        sa.Column("state", risk_state_t_type), sa.Column("reason", sa.Text),
         sa.Column("equity_usd", sa.Numeric(24, 6)), sa.Column("peak_equity_usd", sa.Numeric(24, 6)),
         sa.Column("changed_at", sa.DateTime(timezone=True)),
         sa.Column("unlocked_by", sa.Text), sa.Column("unlock_note", sa.Text),
@@ -263,7 +277,8 @@ try:
     risk_events_t = sa.Table(
         "risk_events", metadata,
         sa.Column("id", sa.BigInteger, primary_key=True), sa.Column("at", sa.DateTime(timezone=True)),
-        sa.Column("event", sa.Text), sa.Column("old_state", sa.Text), sa.Column("new_state", sa.Text),
+        sa.Column("event", sa.Text), sa.Column("old_state", risk_state_t_type),
+        sa.Column("new_state", risk_state_t_type),
         sa.Column("detail", JSONB),
     )
 
