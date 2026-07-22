@@ -307,7 +307,7 @@ async def test_quote_buy_returns_usd_per_whole_token():
 # before that, not after.
 # --------------------------------------------------------------------------- #
 
-from mca.execution.base import PaperExecutor
+from mca.execution.base import MissingReferencePrice, PaperExecutor
 
 
 class _FakeJupiterForPaper:

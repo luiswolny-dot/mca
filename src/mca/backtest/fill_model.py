@@ -34,7 +34,7 @@ gates the executor.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 
 from mca.domain.models import Chain, Side
@@ -96,6 +96,7 @@ class FillModel:
     congestion_failure_rate: float = 0.22   # applied when price is moving fast
     fast_move_threshold_pct: float = 0.15   # per-minute move that counts as fast
     seed: int | None = 42
+    _rng: random.Random = field(init=False, repr=False, compare=False, default=None)  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
         if self.latency is None:
