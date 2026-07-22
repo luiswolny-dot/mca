@@ -70,6 +70,7 @@ services:
     <<: *python-base
     command: python -m mca.ingest.runner --source solana-geyser
     restart: unless-stopped
+    networks: [internal, edge]
 
   # Not yet implemented (see README.md roadmap) — ingest/runner.py refuses
   # these sources with a clear error rather than starting and doing nothing,
@@ -97,6 +98,7 @@ services:
     deploy:
       replicas: 4
     restart: unless-stopped
+    networks: [internal, edge]
 
   scorer:
     <<: *python-base
@@ -117,6 +119,7 @@ services:
     deploy:
       replicas: 1
     restart: unless-stopped
+    networks: [internal, edge]
 
   # --- executor: the only container with key material ----------------------
   executor:
@@ -131,6 +134,7 @@ services:
     deploy:
       replicas: 1
     restart: on-failure:3
+    networks: [internal, edge]
 
   position-manager:
     <<: *python-base
@@ -138,6 +142,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
     restart: unless-stopped
+    networks: [internal, edge]
 
   celery-beat:
     <<: *python-base
@@ -155,6 +160,7 @@ services:
       DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
       WALLET_PUBKEY: ${WALLET_PUBKEY}
     restart: unless-stopped
+    networks: [internal, edge]
 
   # --- the only container with an inbound port -----------------------------
   api:
@@ -172,6 +178,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://mca:${POSTGRES_PASSWORD}@postgres:5432/mca
     restart: unless-stopped
+    networks: [internal, edge]
 
   prometheus:
     image: prom/prometheus:v3.1.0
