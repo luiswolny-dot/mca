@@ -228,7 +228,7 @@ def test_candidate_payload_round_trip_preserves_volume_windows():
 # --------------------------------------------------------------------------- #
 
 from mca.enrich.dexscreener import BASE_URL  # noqa: F401 (import smoke check)
-from mca.ingest.solana_pools import extract_pool_from_transaction
+from mca.ingest.solana_pools import extract_pool_from_transaction, RAYDIUM_AMM_V4
 from mca.execution.jupiter import WSOL_MINT
 
 
@@ -237,17 +237,21 @@ def _dummy_pubkey(n: int) -> str:
 
 
 def _fixture_tx_with_vaults():
-    keys = [_dummy_pubkey(i) for i in range(15)]
-    keys[4] = "PoolAmmAddress11111111111111111111111111111"
-    keys[8] = "TokenMint1111111111111111111111111111111111"   # coin_mint (base)
-    keys[9] = WSOL_MINT                                        # pc_mint (quote)
-    keys[10] = "CoinVaultAddress111111111111111111111111111"   # base vault
-    keys[11] = "PcVaultAddress1111111111111111111111111111"
-    return {"slot": 1, "meta": {"err": None}, "transaction": {"message": {"accountKeys": keys}}}
+    # Instruction-scoped accounts (see _instruction_accounts in
+    # solana_pools.py) — position matches _RAYDIUM_INIT2_ACCOUNTS, not a
+    # transaction-wide accountKeys list.
+    accounts = [_dummy_pubkey(i) for i in range(15)]
+    accounts[4] = "PoolAmmAddress11111111111111111111111111111"
+    accounts[8] = "TokenMint1111111111111111111111111111111111"   # coin_mint (base)
+    accounts[9] = WSOL_MINT                                        # pc_mint (quote)
+    accounts[10] = "CoinVaultAddress111111111111111111111111111"   # base vault
+    accounts[11] = "PcVaultAddress1111111111111111111111111111"
+    ix = {"programId": RAYDIUM_AMM_V4, "accounts": accounts}
+    return {"slot": 1, "meta": {"err": None}, "transaction": {"message": {"instructions": [ix]}}}
 
 
 def test_extract_pool_populates_base_vault_for_the_base_side():
-    event = extract_pool_from_transaction(_fixture_tx_with_vaults(), Dex.RAYDIUM, "sig")
+    event = extract_pool_from_transaction(_fixture_tx_with_vaults(), RAYDIUM_AMM_V4, Dex.RAYDIUM, "sig")
     assert event is not None
     assert event.base_vault == "CoinVaultAddress111111111111111111111111111"
 

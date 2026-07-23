@@ -540,6 +540,9 @@ async def test_quote_refuses_without_reference_price():
 
 from mca.execution.jupiter import WSOL_MINT
 from mca.ingest.solana_pools import (
+    RAYDIUM_AMM_V4, RAYDIUM_CPMM, RAYDIUM_CLMM, PUMPFUN_PROGRAM,
+    _PUMPFUN_CREATE_DISCRIMINATOR, _PUMPFUN_CREATE_V2_DISCRIMINATOR,
+    _b58decode, _instruction_accounts,
     extract_pool_from_transaction, looks_like_pool_creation, payload_to_event,
     _event_to_payload,
 )
@@ -549,48 +552,350 @@ def _dummy_pubkey(n: int) -> str:
     return f"Addr{n:039d}"
 
 
+_B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+
+def _b58encode(data: bytes) -> str:
+    """Inverse of solana_pools._b58decode, for building test fixtures."""
+    num = int.from_bytes(data, "big")
+    encoded = ""
+    while num > 0:
+        num, rem = divmod(num, 58)
+        encoded = _B58_ALPHABET[rem] + encoded
+    n_pad = len(data) - len(data.lstrip(b"\x00"))
+    return "1" * n_pad + (encoded or "1")
+
+
+def test_b58_encode_decode_round_trip_matches_real_discriminator():
+    """Sanity check on the encode/decode pair itself, using the byte values
+    independently verified this session by decoding a real live pump.fun
+    transaction's instruction data (see module docstring)."""
+    assert _b58decode(_b58encode(_PUMPFUN_CREATE_V2_DISCRIMINATOR)) == _PUMPFUN_CREATE_V2_DISCRIMINATOR
+
+
+def _ix(program_id: str, accounts: list[str], discriminator: bytes | None = None) -> dict:
+    data = _b58encode((discriminator or b"") + b"\x00" * 8) if discriminator else None
+    ix = {"programId": program_id, "accounts": accounts}
+    if data is not None:
+        ix["data"] = data
+    return ix
+
+
+def _tx(instructions: list[dict], err=None, log_messages=None) -> dict:
+    meta = {"err": err}
+    if log_messages is not None:
+        meta["logMessages"] = log_messages
+    return {"slot": 123_456, "meta": meta,
+           "transaction": {"message": {"instructions": instructions}}}
+
+
 def _fixture_raydium_init2_tx(coin_mint: str | None = None, pc_mint: str | None = None,
-                              err=None) -> dict:
-    keys = [_dummy_pubkey(i) for i in range(15)]
-    keys[4] = "PoolAmmAddress11111111111111111111111111111"
-    keys[8] = coin_mint or "TokenMint1111111111111111111111111111111111"
-    keys[9] = pc_mint or WSOL_MINT
-    return {"slot": 123_456, "meta": {"err": err},
-           "transaction": {"message": {"accountKeys": keys}}}
+                              err=None, extra_instructions: list[dict] | None = None) -> dict:
+    # _RAYDIUM_INIT2_ACCOUNTS: amm=4, coin_mint=8, pc_mint=9, coin_vault=10,
+    # pc_vault=11, lp_mint=7. Account 0 is the fee-payer/deployer.
+    accounts = [_dummy_pubkey(i) for i in range(15)]
+    accounts[0] = "FeePayerDeployer111111111111111111111111111"
+    accounts[4] = "PoolAmmAddress11111111111111111111111111111"
+    accounts[8] = coin_mint or "TokenMint1111111111111111111111111111111111"
+    accounts[9] = pc_mint or WSOL_MINT
+    ix = _ix(RAYDIUM_AMM_V4, accounts)
+    return _tx((extra_instructions or []) + [ix], err=err)
+
+
+def _fixture_cpmm_tx(mint_0: str | None = None, mint_1: str | None = None, err=None) -> dict:
+    # _RAYDIUM_CPMM_ACCOUNTS: creator=0, pool_state=3, token_0_mint=4,
+    # token_1_mint=5, token_0_vault=10, token_1_vault=11.
+    accounts = [_dummy_pubkey(i) for i in range(20)]
+    accounts[0] = "CpmmCreator1111111111111111111111111111111"
+    accounts[3] = "PoolStateCPMM11111111111111111111111111111"
+    accounts[4] = mint_0 or "TokenMint1111111111111111111111111111111111"
+    accounts[5] = mint_1 or WSOL_MINT
+    return _tx([_ix(RAYDIUM_CPMM, accounts)], err=err)
+
+
+def _fixture_clmm_tx(mint_0: str | None = None, mint_1: str | None = None, err=None) -> dict:
+    # _RAYDIUM_CLMM_ACCOUNTS: pool_creator=0, pool_state=2, token_mint_0=3,
+    # token_mint_1=4, token_vault_0=5, token_vault_1=6.
+    accounts = [_dummy_pubkey(i) for i in range(13)]
+    accounts[0] = "ClmmPoolCreator111111111111111111111111111"
+    accounts[2] = "PoolStateCLMM11111111111111111111111111111"
+    accounts[3] = mint_0 or "TokenMint1111111111111111111111111111111111"
+    accounts[4] = mint_1 or WSOL_MINT
+    return _tx([_ix(RAYDIUM_CLMM, accounts)], err=err)
+
+
+def _fixture_pumpfun_tx(err=None, extra_instructions: list[dict] | None = None) -> dict:
+    # _PUMPFUN_CREATE_ACCOUNTS: mint=0, bonding_curve=1,
+    # associated_bonding_curve=2, user=6.
+    accounts = [_dummy_pubkey(i) for i in range(7)]
+    accounts[0] = "NewMemeMint111111111111111111111111111111"
+    accounts[1] = "BondingCurve11111111111111111111111111111"
+    accounts[2] = "AssocBondingCurve111111111111111111111111"
+    accounts[6] = "DeployerUser111111111111111111111111111111"
+    ix = _ix(PUMPFUN_PROGRAM, accounts, _PUMPFUN_CREATE_DISCRIMINATOR)
+    return _tx((extra_instructions or []) + [ix], err=err)
+
+
+def _fixture_pumpfun_create_v2_tx(err=None, extra_instructions: list[dict] | None = None) -> dict:
+    # _PUMPFUN_CREATE_V2_ACCOUNTS: mint=0, mint_authority=1, bonding_curve=2,
+    # associated_bonding_curve=3, global=4, user=5.
+    accounts = [_dummy_pubkey(i) for i in range(16)]
+    accounts[0] = "NewMemeMintV2111111111111111111111111111"
+    accounts[2] = "BondingCurveV211111111111111111111111111"
+    accounts[3] = "AssocBondingCurveV21111111111111111111111"
+    accounts[5] = "DeployerUserV211111111111111111111111111"
+    ix = _ix(PUMPFUN_PROGRAM, accounts, _PUMPFUN_CREATE_V2_DISCRIMINATOR)
+    return _tx((extra_instructions or []) + [ix], err=err)
 
 
 def test_looks_like_pool_creation_matches_init_marker():
     logs = ["Program log: ray_log", "Program log: initialize2: InitializeInstruction2 {}"]
-    assert looks_like_pool_creation(logs, Dex.RAYDIUM)
+    assert looks_like_pool_creation(logs, RAYDIUM_AMM_V4)
 
 
 def test_looks_like_pool_creation_rejects_ordinary_swap_logs():
     logs = ["Program log: ray_log", "Program log: SwapBaseIn"]
-    assert not looks_like_pool_creation(logs, Dex.RAYDIUM)
+    assert not looks_like_pool_creation(logs, RAYDIUM_AMM_V4)
+
+
+def test_looks_like_pool_creation_matches_cpmm_marker():
+    logs = [f"Program {RAYDIUM_CPMM} invoke [1]", "Program log: Instruction: Initialize"]
+    assert looks_like_pool_creation(logs, RAYDIUM_CPMM)
+
+
+def test_looks_like_pool_creation_matches_clmm_marker():
+    logs = [f"Program {RAYDIUM_CLMM} invoke [1]", "Program log: Instruction: CreatePool"]
+    assert looks_like_pool_creation(logs, RAYDIUM_CLMM)
+
+
+def test_looks_like_pool_creation_matches_pumpfun_marker():
+    logs = [f"Program {PUMPFUN_PROGRAM} invoke [1]", "Program log: Instruction: Create"]
+    assert looks_like_pool_creation(logs, PUMPFUN_PROGRAM)
+
+
+def test_looks_like_pool_creation_matches_pumpfun_create_v2_marker():
+    logs = [f"Program {PUMPFUN_PROGRAM} invoke [1]", "Program log: Instruction: CreateV2"]
+    assert looks_like_pool_creation(logs, PUMPFUN_PROGRAM)
+
+
+def test_looks_like_pool_creation_pumpfun_rejects_buy_logs():
+    logs = [f"Program {PUMPFUN_PROGRAM} invoke [1]", "Program log: Instruction: Buy"]
+    assert not looks_like_pool_creation(logs, PUMPFUN_PROGRAM)
+
+
+def test_looks_like_pool_creation_pumpfun_rejects_create_idempotent():
+    """Regression: a plain substring check on "Instruction: Create" also
+    matches "Instruction: CreateIdempotent" (the SPL associated-token-account
+    program's ATA-creation instruction, which appears alongside a real
+    pump.fun "create" on a combined create+buy transaction). This produced
+    two different "bonding curve" addresses for the same mint in a live run —
+    impossible, since a mint has exactly one PDA. endswith must reject it."""
+    logs = [f"Program {PUMPFUN_PROGRAM} invoke [1]", "Program log: Instruction: CreateIdempotent"]
+    assert not looks_like_pool_creation(logs, PUMPFUN_PROGRAM)
+
+
+def test_looks_like_pool_creation_pumpfun_rejects_unrelated_programs_create_line():
+    """Regression: a *different* program invoked in the same composite
+    transaction can have its own "Instruction: Create"/"CreateV2" line
+    present in the shared flat log array. A search that isn't scoped to
+    pump.fun's own invoke frame matches that too — observed live this
+    session as a "moon"-prefixed account appearing as the "pool" for three
+    different mints (and once shared across two different mints), both
+    impossible for a real per-mint PDA."""
+    logs = [
+        "Program SomeUnrelatedMoonProgram1111111111111111 invoke [1]",
+        "Program log: Instruction: CreateV2",
+        f"Program SomeUnrelatedMoonProgram1111111111111111 success",
+        f"Program {PUMPFUN_PROGRAM} invoke [1]",
+        "Program log: Instruction: Buy",
+    ]
+    assert not looks_like_pool_creation(logs, PUMPFUN_PROGRAM)
+
+
+def test_looks_like_pool_creation_cpmm_rejects_initialize_amm_config():
+    logs = [f"Program {RAYDIUM_CPMM} invoke [1]", "Program log: Instruction: InitializeAmmConfig"]
+    assert not looks_like_pool_creation(logs, RAYDIUM_CPMM)
+
+
+def test_instruction_accounts_reads_the_named_instructions_own_list():
+    """The core regression this session's two prior fix attempts missed:
+    Solana's transaction-wide accountKeys is a global dedup ordered by
+    permission class, NOT a concatenation of each instruction's own account
+    order — reading fixed positions from it only coincidentally works for a
+    single-instruction transaction. A real transaction routinely has a
+    ComputeBudget instruction ahead of the one we care about."""
+    accounts = ["A", "B", "C"]
+    message = {"instructions": [
+        {"programId": "ComputeBudget111111111111111111111111111111", "accounts": []},
+        {"programId": RAYDIUM_AMM_V4, "accounts": accounts},
+    ]}
+    assert _instruction_accounts(message, RAYDIUM_AMM_V4) == accounts
+
+
+def test_instruction_accounts_disambiguates_by_discriminator():
+    """pump.fun's create, create_v2, buy and sell all share one program id —
+    only the raw instruction data (via its Anchor discriminator) tells them
+    apart. Observed live this session as the actual root cause after two
+    failed log-based disambiguation attempts: a composite create+buy
+    transaction has TWO top-level pump.fun instructions with two entirely
+    different account lists, and picking the wrong one silently produced a
+    plausible-looking but wrong "bonding curve" address."""
+    create_accounts = ["mint", "curve", "vault", "g", "u5", "user"]
+    buy_accounts = ["buyer_wallet", "unrelated1", "unrelated2"]
+    message = {"instructions": [
+        {"programId": PUMPFUN_PROGRAM, "accounts": create_accounts,
+         "data": _b58encode(_PUMPFUN_CREATE_V2_DISCRIMINATOR + b"\x00")},
+        {"programId": PUMPFUN_PROGRAM, "accounts": buy_accounts,
+         "data": _b58encode(bytes([102, 6, 61, 18, 1, 218, 235, 234]) + b"\x00")},  # "buy"
+    ]}
+    assert _instruction_accounts(message, PUMPFUN_PROGRAM, _PUMPFUN_CREATE_V2_DISCRIMINATOR) == create_accounts
+    assert _instruction_accounts(message, PUMPFUN_PROGRAM, _PUMPFUN_CREATE_DISCRIMINATOR) is None
 
 
 def test_extract_pool_from_transaction_success():
-    event = extract_pool_from_transaction(_fixture_raydium_init2_tx(), Dex.RAYDIUM, "sig123")
+    event = extract_pool_from_transaction(
+        _fixture_raydium_init2_tx(), RAYDIUM_AMM_V4, Dex.RAYDIUM, "sig123")
     assert event is not None
     assert event.dex is Dex.RAYDIUM
     assert event.quote_token.address == WSOL_MINT
     assert event.pool_address == "PoolAmmAddress11111111111111111111111111111"
 
 
+def test_extract_pool_from_transaction_reads_from_own_instruction_not_top_level():
+    """A ComputeBudget instruction (near-universal for priority fees)
+    precedes the real one — must not be confused with it, and must not read
+    accounts from a transaction-wide list that doesn't exist in this fixture
+    shape at all."""
+    tx = _fixture_raydium_init2_tx(extra_instructions=[
+        {"programId": "ComputeBudget111111111111111111111111111111", "accounts": []},
+    ])
+    event = extract_pool_from_transaction(tx, RAYDIUM_AMM_V4, Dex.RAYDIUM, "sig")
+    assert event is not None
+    assert event.pool_address == "PoolAmmAddress11111111111111111111111111111"
+
+
 def test_extract_pool_from_transaction_drops_non_sol_quoted_pool():
     tx = _fixture_raydium_init2_tx(coin_mint="NotSolA1111111111111111111111111111111111",
                                    pc_mint="NotSolB1111111111111111111111111111111111")
-    assert extract_pool_from_transaction(tx, Dex.RAYDIUM, "sig") is None
+    assert extract_pool_from_transaction(tx, RAYDIUM_AMM_V4, Dex.RAYDIUM, "sig") is None
 
 
 def test_extract_pool_from_transaction_drops_failed_transaction():
     tx = _fixture_raydium_init2_tx(err={"InstructionError": [0, "Custom"]})
-    assert extract_pool_from_transaction(tx, Dex.RAYDIUM, "sig") is None
+    assert extract_pool_from_transaction(tx, RAYDIUM_AMM_V4, Dex.RAYDIUM, "sig") is None
 
 
 def test_extract_pool_from_transaction_fails_closed_on_malformed_shape():
-    assert extract_pool_from_transaction({"transaction": {}}, Dex.RAYDIUM, "sig") is None
-    assert extract_pool_from_transaction(None, Dex.RAYDIUM, "sig") is None
+    assert extract_pool_from_transaction({"transaction": {}}, RAYDIUM_AMM_V4, Dex.RAYDIUM, "sig") is None
+    assert extract_pool_from_transaction(None, RAYDIUM_AMM_V4, Dex.RAYDIUM, "sig") is None
+
+
+def test_extract_pool_from_transaction_fails_closed_when_program_not_in_instructions():
+    tx = _tx([{"programId": "SomeOtherProgram111111111111111111111111111", "accounts": []}])
+    assert extract_pool_from_transaction(tx, RAYDIUM_AMM_V4, Dex.RAYDIUM, "sig") is None
+
+
+def test_extract_pool_from_transaction_cpmm_success():
+    event = extract_pool_from_transaction(
+        _fixture_cpmm_tx(), RAYDIUM_CPMM, Dex.RAYDIUM, "sig-cpmm")
+    assert event is not None
+    assert event.dex is Dex.RAYDIUM
+    assert event.quote_token.address == WSOL_MINT
+    assert event.pool_address == "PoolStateCPMM11111111111111111111111111111"
+    assert event.token.address == "TokenMint1111111111111111111111111111111111"
+
+
+def test_extract_pool_from_transaction_cpmm_drops_non_sol_quoted_pool():
+    tx = _fixture_cpmm_tx(mint_0="NotSolA1111111111111111111111111111111111",
+                          mint_1="NotSolB1111111111111111111111111111111111")
+    assert extract_pool_from_transaction(tx, RAYDIUM_CPMM, Dex.RAYDIUM, "sig") is None
+
+
+def test_extract_pool_from_transaction_cpmm_drops_failed_transaction():
+    tx = _fixture_cpmm_tx(err={"InstructionError": [0, "Custom"]})
+    assert extract_pool_from_transaction(tx, RAYDIUM_CPMM, Dex.RAYDIUM, "sig") is None
+
+
+def test_extract_pool_from_transaction_clmm_success():
+    event = extract_pool_from_transaction(
+        _fixture_clmm_tx(), RAYDIUM_CLMM, Dex.RAYDIUM, "sig-clmm")
+    assert event is not None
+    assert event.dex is Dex.RAYDIUM
+    assert event.quote_token.address == WSOL_MINT
+    assert event.pool_address == "PoolStateCLMM11111111111111111111111111111"
+    assert event.token.address == "TokenMint1111111111111111111111111111111111"
+
+
+def test_extract_pool_from_transaction_clmm_drops_non_sol_quoted_pool():
+    tx = _fixture_clmm_tx(mint_0="NotSolA1111111111111111111111111111111111",
+                          mint_1="NotSolB1111111111111111111111111111111111")
+    assert extract_pool_from_transaction(tx, RAYDIUM_CLMM, Dex.RAYDIUM, "sig") is None
+
+
+def test_extract_pool_from_transaction_pumpfun_success():
+    event = extract_pool_from_transaction(
+        _fixture_pumpfun_tx(), PUMPFUN_PROGRAM, Dex.PUMPSWAP, "sig-pump")
+    assert event is not None
+    assert event.dex is Dex.PUMPSWAP
+    assert event.quote_token.address == WSOL_MINT
+    assert event.token.address == "NewMemeMint111111111111111111111111111111"
+    assert event.pool_address == "BondingCurve11111111111111111111111111111"
+    assert event.deployer == "DeployerUser111111111111111111111111111111"
+    assert event.base_vault == "AssocBondingCurve111111111111111111111111"
+
+
+def test_extract_pool_from_transaction_pumpfun_drops_failed_transaction():
+    tx = _fixture_pumpfun_tx(err={"InstructionError": [0, "Custom"]})
+    assert extract_pool_from_transaction(tx, PUMPFUN_PROGRAM, Dex.PUMPSWAP, "sig") is None
+
+
+def test_extract_pool_from_transaction_pumpfun_create_v2_success():
+    """create_v2 (the instruction that actually fires in live traffic as of
+    this session, per the 2026-11 cashback/Token-2022 upgrade) has a
+    different account layout than legacy create — this must resolve the
+    right one from mint=0, bonding_curve=2, associated_bonding_curve=3,
+    user=5, not the legacy positions."""
+    event = extract_pool_from_transaction(
+        _fixture_pumpfun_create_v2_tx(), PUMPFUN_PROGRAM, Dex.PUMPSWAP, "sig-pumpv2")
+    assert event is not None
+    assert event.token.address == "NewMemeMintV2111111111111111111111111111"
+    assert event.pool_address == "BondingCurveV211111111111111111111111111"
+    assert event.deployer == "DeployerUserV211111111111111111111111111"
+    assert event.base_vault == "AssocBondingCurveV21111111111111111111111"
+
+
+def test_extract_pool_from_transaction_pumpfun_fails_closed_without_create_discriminator():
+    """Stage-one matched on the notification's logs, but the confirmed
+    transaction's pump.fun instruction is neither create nor create_v2 by
+    discriminator — must not guess which account layout to use."""
+    accounts = ["buyer_wallet", "unrelated1", "unrelated2"]
+    tx = _tx([{"programId": PUMPFUN_PROGRAM, "accounts": accounts,
+             "data": _b58encode(bytes([102, 6, 61, 18, 1, 218, 235, 234]) + b"\x00")}])  # "buy"
+    assert extract_pool_from_transaction(tx, PUMPFUN_PROGRAM, Dex.PUMPSWAP, "sig") is None
+
+
+def test_extract_pool_from_transaction_pumpfun_picks_create_not_a_bundled_buy():
+    """The actual live regression: a create+buy transaction has TWO
+    top-level pump.fun instructions. Discriminator matching must resolve
+    accounts from the create_v2 one specifically, never the buy one, even
+    though both share PUMPFUN_PROGRAM as their program id."""
+    buy_ix = {"programId": PUMPFUN_PROGRAM,
+             "accounts": ["WrongMint11111111111111111111111111111111",
+                          "WrongCurve111111111111111111111111111111",
+                          "WrongVault111111111111111111111111111111",
+                          "g", "gp", "WrongUser11111111111111111111111111111111"],
+             "data": _b58encode(bytes([102, 6, 61, 18, 1, 218, 235, 234]) + b"\x00")}
+    tx = _fixture_pumpfun_create_v2_tx(extra_instructions=[buy_ix])
+    event = extract_pool_from_transaction(tx, PUMPFUN_PROGRAM, Dex.PUMPSWAP, "sig")
+    assert event is not None
+    assert event.token.address == "NewMemeMintV2111111111111111111111111111"
+    assert event.pool_address == "BondingCurveV211111111111111111111111111"
+
+
+def test_extract_pool_from_transaction_unknown_program_returns_none():
+    assert extract_pool_from_transaction(
+        _fixture_raydium_init2_tx(), "SomeUnhandledProgram1111111111111111111111",
+        Dex.RAYDIUM, "sig") is None
 
 
 def test_pool_event_payload_round_trip():
