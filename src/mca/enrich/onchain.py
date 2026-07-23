@@ -59,6 +59,27 @@ def parse_mint_authorities(account_info: dict | None) -> tuple[bool | None, bool
     return mint_revoked, freeze_revoked, decimals
 
 
+def parse_supply(account_info: dict | None) -> int | None:
+    """Returns the mint's total supply, or ``None`` if unknown.
+
+    Pure function, same shape and same "unknown, not unsafe" contract as
+    :func:`parse_mint_authorities`. ``data`` is only a dict (with a
+    ``"parsed"`` key) when the RPC node's jsonParsed decoder recognised the
+    account's owner as a program it knows how to parse (SPL Token /
+    Token-2022); for any other owner it falls back to the raw
+    ``["<base64>", "base64"]`` tuple form, which ``isinstance`` here rejects
+    rather than crashing on — this happens for any address that is not
+    actually a mint, e.g. one from a bad or malicious extraction upstream.
+    """
+    if account_info is None:
+        return None
+    data = account_info.get("data")
+    parsed = data.get("parsed") if isinstance(data, dict) else None
+    info = (parsed or {}).get("info", {})
+    raw_supply = info.get("supply")
+    return int(raw_supply) if raw_supply is not None else None
+
+
 def compute_top_holder_pcts(largest_accounts: list[dict], supply: int,
                             exclude_addresses: set[str]) -> tuple[float | None, float | None]:
     """Returns ``(top1_holder_pct, top10_holder_pct)`` excluding the pool's own
@@ -94,12 +115,7 @@ class OnChainSecurityChecker:
             log.warning("getTokenLargestAccounts failed for %s: %s", token.key, exc)
 
         mint_revoked, freeze_revoked, decimals = parse_mint_authorities(account_info)
-        supply = None
-        if account_info is not None:
-            info = (account_info.get("data", {}).get("parsed", {}) or {}).get("info", {})
-            raw_supply = info.get("supply")
-            if raw_supply is not None:
-                supply = int(raw_supply)
+        supply = parse_supply(account_info)
 
         top1, top10 = (None, None)
         if supply is not None:

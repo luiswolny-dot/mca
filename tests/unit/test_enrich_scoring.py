@@ -23,7 +23,7 @@ TOK = TokenRef(Chain.SOLANA, "TokenMint1111111111111111111111111111111111")
 
 from mca.enrich.onchain import (
     TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, compute_top_holder_pcts,
-    parse_mint_authorities,
+    parse_mint_authorities, parse_supply,
 )
 
 
@@ -65,6 +65,28 @@ def test_parse_mint_authorities_accepts_token_2022():
     acct = _mint_account(owner=TOKEN_2022_PROGRAM_ID)
     revoked_mint, revoked_freeze, decimals = parse_mint_authorities(acct)
     assert revoked_mint is True and decimals == 9
+
+
+def test_parse_supply_reads_from_parsed_mint():
+    assert parse_supply(_mint_account()) == 1_000_000_000_000_000
+
+
+def test_parse_supply_none_account_is_unknown():
+    assert parse_supply(None) is None
+
+
+def test_parse_supply_does_not_crash_on_unparseable_data_shape():
+    """jsonParsed falls back to the raw ``["<base64>", "base64"]`` tuple form
+    when the account's owner isn't a program the RPC node can parse — e.g. a
+    garbage/non-mint address from a bad extraction upstream. This crashed the
+    enricher in production before the isinstance guard was added."""
+    acct = {"owner": "SomeRandomProgram1111111111111111111111111",
+           "data": ["some-base64-blob==", "base64"]}
+    assert parse_supply(acct) is None
+
+
+def test_parse_supply_missing_data_key_is_unknown():
+    assert parse_supply({"owner": TOKEN_PROGRAM_ID}) is None
 
 
 def test_compute_top_holder_pcts_excludes_pool_vault():
