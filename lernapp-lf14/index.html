@@ -85,7 +85,6 @@ main section{padding-block:20px;display:flex;flex-direction:column;gap:16px}
 .merk::before{content:"Merke";display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .tactions{display:flex;flex-wrap:wrap;gap:8px}
 .mono{font-family:var(--f-mono);font-size:.92em}
-.rlp{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;padding:1px 5px;border-radius:4px;background:var(--accent-soft);color:var(--ink);border:1px solid var(--accent);vertical-align:2px}
 table.pins{border-collapse:collapse;font-size:14px;width:100%}
 .tablebox{overflow-x:auto}
 table.pins th,table.pins td{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
@@ -151,7 +150,7 @@ label.lbl{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-tra
   <header class="top">
     <div class="eyebrow">Klassenarbeit · Lernfeld 14 · Nachrüstung</div>
     <h1>LF14 <span>Lernbox</span></h1>
-    <div class="progress"><div class="bar"><i id="pbar"></i></div><small id="ptext">0 / 12 Themen</small></div>
+    <div class="progress"><div class="bar"><i id="pbar"></i></div><small id="ptext">0 / 11 Themen</small></div>
   </header>
 
   <nav class="tabs" aria-label="Bereiche">
@@ -163,7 +162,7 @@ label.lbl{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-tra
 
   <main>
     <section id="v-themen">
-      <p class="lead">Die elf Themen aus dem Lehrstoff, ergänzt um Inhalte aus dem Rahmenlehrplan (LF 14P). Punkte mit <span class="rlp">RLP</span> stammen aus dem Rahmenlehrplan. Thema 12 steht nicht auf der Liste deines Lehrers.</p>
+      <p class="lead">Die elf Themen aus dem Lehrstoff. Aufklappen, durchlesen, als gelernt markieren. Danach direkt zum passenden Quiz springen.</p>
       <div id="topics" style="display:flex;flex-direction:column;gap:10px"></div>
     </section>
 
@@ -172,7 +171,7 @@ label.lbl{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-tra
     </section>
 
     <section id="v-rechnen" hidden>
-      <p class="lead">Zufällige Rechenaufgaben wie in der Klassenarbeit. Ergebnis eintippen (Komma oder Punkt), prüfen, Lösungsweg ansehen.</p>
+      <p class="lead">Einfache Grundlagen-Aufgaben mit glatten Zahlen. Ergebnis eintippen (Komma oder Punkt), prüfen, Lösungsweg ansehen.</p>
       <div class="row">
         <label class="lbl" for="calcType">Aufgabentyp</label>
         <select id="calcType"></select>
@@ -216,12 +215,6 @@ const TOPICS=[
 <li><b>Bewerten:</b> Soll-Ist-Vergleich, was lief gut, was beim nächsten Mal besser machen.</li>
 <li><b>Projektplanung:</b> Ziel festlegen, Arbeitspakete bilden, Reihenfolge und Abhängigkeiten, Zeitplan (z.&nbsp;B. Balkenplan/Gantt), Meilensteine, Verantwortliche, Kosten- und Materialliste.</li>
 </ul>
-<ul>
-<li><b>Dokumentation</b> <span class="rlp">RLP</span>: Arbeitsablauf und Einbau dokumentieren, fahrzeugspezifische Unterlagen vervollständigen (Betriebserlaubnis, Abnahme, Eintragung). Ausgebaute Altteile für die Übergabe vorbereiten und auf Vollständigkeit prüfen.</li>
-<li><b>Übergabe und Einweisung</b> <span class="rlp">RLP</span>: Fahrzeug übergeben, die neue Funktion vorführen, den Kunden mit der Bedienung vertraut machen, Unterlagen übergeben (Bedienungsanleitung, Bescheinigungen).</li>
-<li><b>Zielkonflikte</b> <span class="rlp">RLP</span>: Kundenwunsch, Technik und Vorschriften passen nicht immer zusammen. Beispiel: Der Kunde will maximale Lautstärke und billig, aber die Bordnetzbelastung, die Sicherheit oder die Zulassung erlauben das nicht. Lösung: aufklären, Alternativen anbieten, Vorschriften haben Vorrang.</li>
-<li><b>Bewerten</b> heißt auch: Was kann der Betrieb bei Vorgehen und Kommunikation mit dem Kunden verbessern?</li>
-</ul>
 <div class="merk">„Kontrollieren“ prüft das Ergebnis der Arbeit. „Bewerten“ prüft den ganzen Ablauf und zieht Lehren für das nächste Mal.</div>`},
 {id:"kunde",name:"Kundengespräch & Anforderungen an Nachrüstungen",html:`
 <ul>
@@ -231,12 +224,6 @@ const TOPICS=[
 <li><b>Technische Anforderungen:</b> passt es zum Fahrzeug (Typ, Baujahr, Einbauraum), Belastung des Bordnetzes und der Batterie, Integration in CAN-Bus/Steuergeräte, Codierung nötig?</li>
 <li><b>Rechtliche Anforderungen:</b> Teil mit ABE, EG-Typgenehmigung oder E-Prüfzeichen? Sonst Teilegutachten und Eintragung (Prüforganisation). Herstellergarantie und Gewährleistung beachten.</li>
 <li><b>Ergebnis festhalten:</b> Auftrag schriftlich mit Umfang, Preis/Kostenvoranschlag, Termin und Unterschrift.</li>
-</ul>
-<ul>
-<li><b>Technische Voraussetzungen ermitteln</b> <span class="rlp">RLP</span>: mit Herstellerunterlagen, Schaltplänen und Informationssystemen der Branche prüfen, ob die Nachrüstung mechanisch und elektrisch möglich ist.</li>
-<li><b>Verfügbarkeit und Angebotsvergleich</b> <span class="rlp">RLP</span>: Teile auf Lager oder lieferbar? Mehrere Angebote nach <b>Qualität</b> und <b>Kosten</b> vergleichen.
-  <br>Gesamtpreis = Teilekosten + Arbeitskosten (Arbeitszeit · Stundensatz), dazu 19 % MwSt. Das billigste Angebot ist nicht immer das beste (Qualität, Garantie, Aufwand).</li>
-<li><b>Wirtschaftlich arbeiten</b> <span class="rlp">RLP</span>: Material und Arbeitszeit sparsam und kundenfreundlich einsetzen.</li>
 </ul>
 <div class="merk">Erst Bedarf ermitteln, dann Lösung anbieten. Der Kunde muss vor dem Einbau wissen, was es kostet und ob eine Eintragung nötig ist.</div>`},
 {id:"antenne",name:"Fahrzeugantennen",html:`
@@ -279,13 +266,6 @@ const TOPICS=[
 <li><b>Remote-Leitung:</b> schaltet die Endstufe mit dem Radio ein (ca. 12 V). Ohne Remote läuft die Endstufe dauerhaft → Batterie leer.</li>
 <li><b>DSP-Verstärker:</b> digitale Klangbearbeitung (EQ, Laufzeitkorrektur, Weichen). Ideal, wenn das Werksradio bleiben soll (Plug &amp; Play-Kabelbaum).</li>
 <li><b>Aktiv-Subwoofer:</b> Subwoofer mit eingebautem Verstärker, platzsparend (z.&nbsp;B. unter dem Sitz).</li>
-</ul>
-<ul>
-<li><b>In den Fahrzeugverbund einbinden</b> <span class="rlp">RLP</span> (mit dem Diagnosetester):
-  <br>– <b>Einbinden:</b> das neue Steuergerät oder Bauteil im Netzwerk anmelden.
-  <br>– <b>Anlernen:</b> das System lernt Bauteile oder Werte kennen (z.&nbsp;B. Funkschlüssel, Lenkwinkel, Fensterheber-Endlagen).
-  <br>– <b>Freischalten:</b> eine Funktion wird aktiviert, oft online beim Hersteller (z.&nbsp;B. Anhängerbetrieb).
-  <br>– <b>Codieren:</b> dem Steuergerät die Ausstattung mitteilen (z.&nbsp;B. „AHK verbaut“ → PDC aus bei Anhänger, ESP-Gespannstabilisierung).</li>
 </ul>
 <div class="merk">Werksradio bleibt + keine Cinch-Ausgänge → High-Level-Eingang oder DSP. Remote-Leitung nie vergessen.</div>`},
 {id:"klang",name:"Klangqualität, Signal-Rausch-Abstand, Klangeinstellungen",html:`
@@ -332,14 +312,6 @@ const TOPICS=[
 <li><b>Mechanisch:</b> Endstufe, Subwoofer, Zusatzbatterie <b>crashsicher</b> befestigen (bei einem Unfall werden lose Teile zu Geschossen). Kühlung der Endstufe frei halten.</li>
 <li><b>Abschluss:</b> Funktionsprüfung aller Verbraucher, Fehlerspeicher auslesen und löschen, Ruhestrom messen.</li>
 </ul>
-<ul>
-<li><b>Sicherheitsvorschriften nach Rahmenlehrplan</b> <span class="rlp">RLP</span>:
-  <br>– <b>technisch:</b> Absicherung, Leitungsquerschnitt, Befestigung.
-  <br>– <b>verkehrstechnisch:</b> Zulassung, Beleuchtungsvorschriften, nichts darf die Sicht nach vorne oder hinten verdecken.
-  <br>– <b>Bedienungssicherheit:</b> Bedienung darf nicht vom Verkehr ablenken (z.&nbsp;B. Freisprecheinrichtung statt Handy in der Hand).
-  <br>– <b>ergonomisch:</b> Bedienteile gut erreichbar, Displays im Blickfeld, aber nicht im Airbag- oder Sichtbereich.</li>
-<li><b>Messmittel:</b> Multimeter, Strommesszange, Diagnosetester, Stützlastwaage. Passend zur Aufgabe auswählen.</li>
-</ul>
 <div class="merk">Minus zuerst ab, Minus zuletzt an. Jede Plusleitung von der Batterie wird direkt am Anfang abgesichert.</div>`},
 {id:"batterie",name:"Zusatzbatterien & Trennrelais",html:`
 <ul>
@@ -381,16 +353,7 @@ const TOPICS=[
 <tr><td>12</td><td>Anhängererkennung / frei</td><td>–</td></tr>
 <tr><td>13</td><td>Masse für 9</td><td>–</td></tr>
 </tbody></table></div>
-<div class="merk">Stützlast: kleinster zulässiger Wert gilt, mindestens 4 % vom Anhängergewicht, mindestens 25 kg.</div>`},
-{id:"rlpextra",name:"Rahmenlehrplan-Extra: Licht, Gas, Funk",html:`
-<p style="color:var(--muted)">Diese Themen stehen im Rahmenlehrplan, aber nicht auf der Liste deines Lehrers. Nur kurz anschauen, wenn Zeit bleibt.</p>
-<ul>
-<li><b>Lichttechnische Anlagen:</b> Zusatzscheinwerfer (Fernlicht, Nebelscheinwerfer), Tagfahrlicht. Nur Teile mit <b>E-Prüfzeichen</b>, Anbauvorschriften (Höhe, Abstand, Anzahl) beachten, Scheinwerfer danach einstellen. LED-Nachrüstlampen nur mit Genehmigung für das Fahrzeug.</li>
-<li><b>Gasbetriebanlagen (LPG/CNG):</b> Gastank, Verdampfer/Druckregler, Einblasventile, Umschaltung Benzin/Gas. Einbau nur durch geschultes Personal, Gasanlagenprüfung (GAP) und Eintragung nötig.</li>
-<li><b>Drahtlose Signalübertragung:</b> Bluetooth (Freisprechen, Musik-Streaming), WLAN, Smartphone-Anbindung (Apple CarPlay, Android Auto), Funk-Rückfahrkamera. Vorteil: weniger Leitungen. Nachteil: Störanfälligkeit, Kopplung nötig.</li>
-<li><b>Unterhaltungselektronik:</b> Radio, Navigation, Bildschirme. Bildschirme für Videos dürfen während der Fahrt nicht im Blickfeld des Fahrers laufen.</li>
-</ul>
-<div class="merk">Nachrüstung ohne Prüfzeichen oder Eintragung → Betriebserlaubnis kann erlöschen.</div>`}
+<div class="merk">Stützlast: kleinster zulässiger Wert gilt, mindestens 4 % vom Anhängergewicht, mindestens 25 kg.</div>`}
 ];
 
 const learned=new Set(store.get("learned",[]));
@@ -426,11 +389,8 @@ const Q=[
 {t:"kunde",q:"Was gehört NICHT zu den technischen Anforderungen, die vor einer Nachrüstung geklärt werden?",a:["Lieblingsmusik des Kunden","Belastbarkeit des Bordnetzes","Einbauraum im Fahrzeug","Integration in den CAN-Bus"],e:"Bordnetz, Platz und Steuergeräte-Integration bestimmen, ob und wie nachgerüstet werden kann."},
 {t:"antenne",q:"Wie lang sollte eine λ/4-Stabantenne für 100 MHz ungefähr sein?",a:["75 cm","3 m","1,5 m","30 cm"],e:"λ = c/f = 300 000 000 m/s ÷ 100 000 000 Hz = 3 m. λ/4 = 0,75 m."},
 {t:"antenne",q:"Wozu dient die Spule im Fuß einer Kurzstabantenne?",a:["Sie verlängert die Antenne elektrisch","Sie filtert den Bass heraus","Sie versorgt den Verstärker mit Strom","Sie schützt vor Blitzschlag"],e:"Die Verlängerungsspule gleicht die zu kurze mechanische Länge aus, sodass die Antenne trotzdem auf die Frequenz abgestimmt ist."},
-{t:"antenne",q:"Was versteht man unter Phantomspeisung?",a:["Versorgung des Antennenverstärkers über den Innenleiter des Antennenkabels","Eine Antenne ohne Verstärker","Stromversorgung des Radios über Klemme 30","Empfang über zwei Antennen"],e:"Das Radio legt eine Gleichspannung auf das Koaxkabel. Der Verstärker in der Antenne wird darüber versorgt, eine extra Leitung ist nicht nötig."},
 {t:"antenne",q:"Welcher Vorteil hat ein Antennen-Diversity-System?",a:["Weniger Empfangsaussetzer, weil die jeweils beste Antenne genutzt wird","Höhere Lautstärke","Kein Antennenverstärker nötig","Nur eine Frequenz wird empfangen"],e:"Bei Diversity wertet das Radio mehrere Antennen aus und schaltet auf das stärkste Signal."},
-{t:"antenne",q:"In welchem Frequenzbereich sendet DAB+ in Deutschland?",a:["Band III, ca. 174–240 MHz","87,5–108 MHz","ca. 1575 MHz","20 Hz–20 kHz"],e:"87,5–108 MHz ist UKW, 1575 MHz ist GPS, 20 Hz–20 kHz ist der Hörbereich."},
 {t:"sound",q:"Welches Bauteil in einer passiven Weiche lässt hohe Frequenzen zum Hochtöner durch?",a:["Kondensator in Reihe","Spule in Reihe","Widerstand parallel","Diode in Reihe"],e:"Der Blindwiderstand eines Kondensators sinkt mit steigender Frequenz → Hochpass. Die Spule wirkt umgekehrt als Tiefpass."},
-{t:"sound",q:"Welche Flankensteilheit hat eine Frequenzweiche 2. Ordnung?",a:["12 dB/Oktave","6 dB/Oktave","18 dB/Oktave","24 dB/Oktave"],e:"Pro Ordnung 6 dB/Oktave: 1. Ordnung 6, 2. Ordnung 12, 3. Ordnung 18, 4. Ordnung 24 dB/Oktave."},
 {t:"sound",q:"Welche Verstärkerklasse hat den höchsten Wirkungsgrad?",a:["Klasse D","Klasse A","Klasse AB","Klasse B ohne Gegentakt"],e:"Klasse D arbeitet als Schaltverstärker und erreicht über 80–90 %. Deshalb wird er kaum warm und eignet sich für Subwoofer."},
 {t:"sound",q:"Welches Teil eines Lautsprechers bewegt sich im Magnetfeld, wenn Strom fließt?",a:["Schwingspule","Korb","Magnet","Sicke"],e:"Die Schwingspule ist mit der Membran verbunden. Durch die Kraft im Magnetfeld bewegt sie die Membran."},
 {t:"sound",q:"Was ist ein Komponentensystem?",a:["Getrennter Hoch- und Tieftöner mit externer Frequenzweiche","Hochtöner sitzt direkt im Tieftöner","Subwoofer mit eingebautem Verstärker","Radio mit DSP"],e:"Beim Koaxialsystem sitzt der Hochtöner im Tieftöner. Beim Komponentensystem sind sie getrennt, der Hochtöner kann besser platziert werden."},
@@ -453,23 +413,11 @@ const Q=[
 {t:"sicherheit",q:"Wie wird eine Leitung durch ein Blech geführt?",a:["Durch ein entgratetes Loch mit Gummitülle","Direkt durch das Bohrloch","Mit Isolierband umwickelt durchs Loch","Durch einen Spalt der Tür"],e:"Die Tülle schützt die Isolierung vor dem Durchscheuern und dichtet ab."},
 {t:"sicherheit",q:"Warum muss ein Subwoofer im Kofferraum fest verschraubt sein?",a:["Bei einem Unfall würde er sonst durch das Fahrzeug geschleudert","Damit er lauter klingt","Damit die Garantie gilt","Wegen der Frequenzweiche"],e:"Lose Teile werden bei einer Vollbremsung oder einem Aufprall zu gefährlichen Geschossen."},
 {t:"batterie",q:"Wann verbindet ein Trennrelais Starter- und Zusatzbatterie?",a:["Wenn der Motor läuft bzw. die Lichtmaschine lädt","Immer","Nur wenn der Motor aus ist","Wenn die Zusatzbatterie leer ist"],e:"Bei laufendem Motor werden beide geladen. Bei stehendem Motor ist die Starterbatterie getrennt und bleibt voll."},
-{t:"batterie",q:"Warum braucht man bei modernen Fahrzeugen oft einen Ladebooster statt eines einfachen Trennrelais?",a:["Intelligente Lichtmaschinen liefern zeitweise zu wenig Ladespannung","Trennrelais sind verboten","Ladebooster sind billiger","Damit die Zusatzbatterie entladen wird"],e:"Durch Rekuperation und Ladestrategie sinkt die Spannung oft unter 13 V. Der DC-DC-Wandler hebt sie auf die richtige Ladespannung."},
 {t:"batterie",q:"Welche Batterie eignet sich am besten für den Einbau im Innenraum?",a:["AGM- oder Gel-Batterie","Offene Nassbatterie ohne Entgasung","Starterbatterie mit Stopfen","Jede Batterie"],e:"AGM und Gel sind auslaufsicher und gasen im Normalbetrieb kaum aus. Nassbatterien entwickeln Knallgas."},
 {t:"batterie",q:"Warum wird die Verbindungsleitung zwischen beiden Batterien an beiden Enden abgesichert?",a:["Weil der Strom aus beiden Richtungen fließen kann","Weil es schöner aussieht","Damit das Relais schneller schaltet","Weil die Leitung zu kurz ist"],e:"Bei einem Kurzschluss speist jede Batterie den Fehler. Deshalb braucht jede Seite eine eigene Sicherung."},
 {t:"ahk",q:"Zulässige Stützlast: Fahrzeug 75 kg, Anhänger 50 kg. Welche Stützlast darf maximal gefahren werden?",a:["50 kg","75 kg","125 kg","62,5 kg"],e:"Es gilt immer der kleinere zulässige Wert."},
 {t:"ahk",q:"Wie hoch muss die Stützlast mindestens sein?",a:["4 % des tatsächlichen Anhängergewichts, mindestens 25 kg","10 % des Anhängergewichts","Genau 50 kg","Es gibt keine Mindestgrenze"],e:"Zu wenig Stützlast macht das Gespann instabil, der Anhänger kann pendeln."},
-{t:"ahk",q:"Welche Funktion hat Pin 9 der 13-poligen Steckdose?",a:["Dauerplus (Klemme 30)","Rückfahrlicht","Bremslicht","Blinker links"],e:"Pin 9 = Dauerplus, Pin 10 = Ladeleitung, Pin 8 = Rückfahrlicht, Pin 6 = Bremslicht, Pin 1 = Blinker links."},
-{t:"ahk",q:"Was kann ein fahrzeugspezifischer E-Satz, was ein universeller meist nicht kann?",a:["PDC-Abschaltung, Anhängerstabilisierung im ESP und Blinkerüberwachung über CAN-Bus","Bremslicht ansteuern","Blinker ansteuern","Schlusslicht ansteuern"],e:"Licht und Blinker kann jeder E-Satz. Komfort- und Sicherheitsfunktionen brauchen das Anhängersteuergerät und eine Codierung."},
-{t:"ahk",q:"Was passiert bei zu hoher Stützlast?",a:["Hinterachse überlastet, Vorderachse entlastet → schlechtere Lenkung und Bremswirkung","Anhänger pendelt stärker","Nichts","Der Anhänger hebt vorne ab"],e:"Zu viel Last auf dem Kugelkopf drückt das Heck herunter und nimmt der Vorderachse Gewicht."},
-{t:"handlung",q:"Was gehört laut Rahmenlehrplan zur Fahrzeugübergabe nach einer Nachrüstung?",a:["Einweisung des Kunden in die Bedienung und Übergabe der Unterlagen und Altteile","Nur die Rechnung","Fehlerspeicher löschen ohne Kundenkontakt","Das Fahrzeug unkommentiert auf den Hof stellen"],e:"Der Kunde soll mit der Handhabung vertraut sein. Dazu kommen Dokumentation, Bescheinigungen und die ausgebauten Teile."},
-{t:"handlung",q:"Ein Kunde will eine sehr laute Anlage ohne Eintragung zum Billigpreis. Wie nennt man diese Situation?",a:["Zielkonflikt zwischen Kundenwunsch, Technik und Vorschriften","Vollständige Handlung","Codierung","Angebotsvergleich"],e:"Man klärt den Kunden auf und bietet Alternativen an. Vorschriften und Sicherheit gehen vor."},
-{t:"handlung",q:"Welche Unterlagen werden nach einer genehmigungspflichtigen Nachrüstung vervollständigt?",a:["Betriebserlaubnis, Abnahme, Eintragung in die Fahrzeugpapiere","Nur der Werkstattauftrag","Die Bedienungsanleitung des Radios","Der Wartungsplan"],e:"Der Rahmenlehrplan nennt ausdrücklich: Allgemeine Betriebserlaubnis, Abnahmen, Eintragungen."},
-{t:"kunde",q:"Angebot A: Teile 300 €, 2 h Arbeit. Angebot B: Teile 250 €, 3 h Arbeit. Stundensatz 80 €. Welches ist netto günstiger?",a:["A mit 460 € (B kostet 490 €)","B mit 490 €","Beide gleich","A mit 380 €"],e:"A: 300 + 2 · 80 = 460 €. B: 250 + 3 · 80 = 490 €. Die Arbeitskosten machen den Unterschied."},
-{t:"konzepte",q:"Nach dem Einbau einer AHK teilt man dem Steuergerät mit dem Tester mit, dass sie verbaut ist. Wie heißt das?",a:["Codieren","Anlernen","Kalibrieren","Flashen der Batterie"],e:"Codieren = Ausstattung im Steuergerät hinterlegen. Anlernen = Bauteile oder Werte einlernen (z. B. Funkschlüssel)."},
-{t:"konzepte",q:"Was bedeutet „Freischalten“ einer Funktion?",a:["Eine Funktion wird aktiviert, oft online über den Hersteller","Eine Sicherung wird entfernt","Der Fehlerspeicher wird gelöscht","Die Batterie wird abgeklemmt"],e:"Manche Funktionen sind im Steuergerät vorhanden, müssen aber erst vom Hersteller freigegeben werden."},
-{t:"sicherheit",q:"Ein Monitor soll so eingebaut werden, dass der Fahrer ihn gut sieht, ohne vom Verkehr abgelenkt zu werden. Welche Sicherheitsanforderung ist das?",a:["Ergonomie und Bedienungssicherheit","Elektrische Absicherung","Ladungssicherung","Korrosionsschutz"],e:"Der Rahmenlehrplan unterscheidet technische, verkehrstechnische, Bedienungs- und ergonomische Sicherheit."},
-{t:"rlpextra",q:"Was brauchen nachgerüstete Zusatzscheinwerfer?",a:["E-Prüfzeichen und richtigen Anbau nach Vorschrift","Nur eine Sicherung","Nichts, wenn sie hell genug sind","Eine Gasanlagenprüfung"],e:"Lichttechnische Teile müssen genehmigt sein, und Anbauhöhe, Abstände und Einstellung müssen stimmen."},
-{t:"rlpextra",q:"Was ist nach dem Einbau einer Autogasanlage (LPG) Pflicht?",a:["Gasanlagenprüfung und Eintragung","Nur ein Ölwechsel","Codierung des Radios","Nichts"],e:"Gasanlagen sind sicherheitsrelevant und müssen abgenommen und eingetragen werden."}
+{t:"ahk",q:"Was passiert bei zu hoher Stützlast?",a:["Hinterachse überlastet, Vorderachse entlastet → schlechtere Lenkung und Bremswirkung","Anhänger pendelt stärker","Nichts","Der Anhänger hebt vorne ab"],e:"Zu viel Last auf dem Kugelkopf drückt das Heck herunter und nimmt der Vorderachse Gewicht."}
 ];
 let quizTopic="alle", quiz=null;
 const LETTERS=["A","B","C","D"];
@@ -523,69 +471,50 @@ const NORM_A=[0.5,0.75,1,1.5,2.5,4,6,10,16,25,35,50,70,95];
 const NORM_F=[5,7.5,10,15,20,25,30,40,50,60,80,100,125,150,200,250];
 const nextUp=(arr,x)=>arr.find(v=>v>=x-1e-9)??arr[arr.length-1];
 const CALC={
- strom:{name:"Stromaufnahme Endstufe",gen(){
-   const P=pick([200,300,400,500,600,800,1000]),eta=pick([0.5,0.6,0.7,0.8,0.85,0.9]),U=pick([12,13.8,14]);
-   const Pz=P/eta,I=Pz/U;
-   return{text:`Eine Endstufe liefert ${P} W RMS an die Lautsprecher. Ihr Wirkungsgrad beträgt ${de(eta*100,0)} %. Wie groß ist die Stromaufnahme aus dem Bordnetz?`,
-     given:[["P_ab",P+" W"],["η",de(eta*100,0)+" %"],["U",de(U,1)+" V"]],unit:"A",ans:I,tol:0.02,
-     steps:`P_zu = P_ab / η = ${P} W / ${de(eta,2)} = ${de(Pz,1)} W\nI = P_zu / U = ${de(Pz,1)} W / ${de(U,1)} V = ${de(I,2)} A`};}},
- impedanz:{name:"Gesamtimpedanz Lautsprecher",gen(){
-   const Z=pick([2,4,8]),n=pick([2,2,3,4]),par=Math.random()<0.6,res=par?Z/n:Z*n;
-   return{text:`${n} Lautsprecher mit je ${Z} Ω werden ${par?"parallel":"in Reihe"} geschaltet. Wie groß ist die Gesamtimpedanz?`,
-     given:[["Z je Lautsprecher",Z+" Ω"],["Anzahl",String(n)],["Schaltung",par?"parallel":"Reihe"]],unit:"Ω",ans:res,tol:0.01,
-     steps:par?`Gleiche Widerstände parallel: Z = Z1 / n = ${Z} Ω / ${n} = ${de(res,2)} Ω`:`Reihe: Z = Z1 + Z2 + … = ${n} · ${Z} Ω = ${res} Ω`};}},
- leistung:{name:"Leistung am Lautsprecher",gen(){
-   const U=pick([8,10,12,14,16,20,24]),R=pick([2,4,8]),P=U*U/R;
-   return{text:`Am Lautsprecherausgang wird eine Effektivspannung von ${U} V gemessen. Der Lautsprecher hat ${R} Ω. Welche Leistung nimmt er auf?`,
-     given:[["U",U+" V"],["Z",R+" Ω"]],unit:"W",ans:P,tol:0.01,
-     steps:`P = U² / Z = (${U} V)² / ${R} Ω = ${U*U} / ${R} = ${de(P,1)} W\nKontrolle: I = U / Z = ${de(U/R,2)} A → P = U · I = ${de(P,1)} W`};}},
- querschnitt:{name:"Leitungsquerschnitt",gen(){
-   const I=pick([20,25,30,40,50,60,80]),l=pick([3,3.5,4,4.5,5,6]),dU=pick([0.3,0.4,0.5]),k=56,A=I*l/(k*dU);
-   return{text:`Die Plusleitung einer Endstufe ist ${de(l,1)} m lang (Rückleitung über die Karosserie). Es fließen ${I} A, der Spannungsfall darf höchstens ${de(dU,1)} V betragen. Kupfer: κ = 56 m/(Ω·mm²). Welcher Querschnitt ist rechnerisch nötig?`,
-     given:[["I",I+" A"],["l",de(l,1)+" m"],["ΔU",de(dU,1)+" V"],["κ","56 m/(Ω·mm²)"]],unit:"mm²",ans:A,tol:0.02,
-     steps:`A = I · l / (κ · ΔU)\nA = ${I} A · ${de(l,1)} m / (56 · ${de(dU,1)} V) = ${de(I*l,1)} / ${de(k*dU,1)} = ${de(A,2)} mm²\n→ gewählt: nächster Normquerschnitt ${de(nextUp(NORM_A,A),2)} mm²`};}},
+ strom:{name:"Strom aus Leistung",gen(){
+   const P=pick([24,36,48,60,120,180,240,360]),U=12,I=P/U;
+   return{text:`Ein Verbraucher hat eine Leistung von ${P} W und hängt an ${U} V. Wie groß ist der Strom?`,
+     given:[["P",P+" W"],["U",U+" V"]],unit:"A",ans:I,tol:0.01,steps:`I = P / U = ${P} W / ${U} V = ${de(I,2)} A`};}},
+ leistung:{name:"Leistung berechnen",gen(){
+   const U=12,I=pick([2,3,4,5,8,10,15,20]),P=U*I;
+   return{text:`Durch einen Verbraucher an ${U} V fließen ${I} A. Wie groß ist die Leistung?`,
+     given:[["U",U+" V"],["I",I+" A"]],unit:"W",ans:P,tol:0.01,steps:`P = U · I = ${U} V · ${I} A = ${P} W`};}},
+ ohm:{name:"Strom am Lautsprecher",gen(){
+   const Z=pick([2,4,8]),U=Z*pick([1,2,3,4,5]),I=U/Z;
+   return{text:`An einem ${Z}-Ω-Lautsprecher liegen ${U} V. Wie groß ist der Strom?`,
+     given:[["U",U+" V"],["Z",Z+" Ω"]],unit:"A",ans:I,tol:0.01,steps:`I = U / Z = ${U} V / ${Z} Ω = ${de(I,2)} A`};}},
+ impedanz:{name:"Zwei Lautsprecher zusammenschalten",gen(){
+   const Z=pick([4,8]),par=Math.random()<0.5,res=par?Z/2:Z*2;
+   return{text:`Zwei Lautsprecher mit je ${Z} Ω werden ${par?"parallel":"in Reihe"} geschaltet. Wie groß ist die Gesamtimpedanz?`,
+     given:[["Z je Lautsprecher",Z+" Ω"],["Schaltung",par?"parallel":"Reihe"]],unit:"Ω",ans:res,tol:0.01,
+     steps:par?`Parallel (zwei gleiche): Z = ${Z} Ω / 2 = ${res} Ω`:`Reihe: Z = ${Z} Ω + ${Z} Ω = ${res} Ω`};}},
+ wirkungsgrad:{name:"Wirkungsgrad",gen(){
+   const eta=pick([50,60,75,80,90]),Pzu=pick([100,200,400,500,1000]),Pab=Pzu*eta/100;
+   return{text:`Eine Endstufe nimmt ${Pzu} W auf und gibt ${de(Pab,0)} W an die Lautsprecher ab. Wie groß ist der Wirkungsgrad in %?`,
+     given:[["P_zu",Pzu+" W"],["P_ab",de(Pab,0)+" W"]],unit:"%",ans:eta,tol:0.01,
+     steps:`η = P_ab / P_zu = ${de(Pab,0)} W / ${Pzu} W = ${de(eta/100,2)} = ${eta} %`};}},
+ endstufe:{name:"Strom einer Endstufe (mit η)",gen(){
+   const I=pick([10,20,25,30,40,50]),U=12,Pzu=I*U,eta=pick([0.5,0.8]),Pab=Pzu*eta;
+   return{text:`Eine Endstufe gibt ${de(Pab,0)} W ab, ihr Wirkungsgrad ist ${eta*100} %. Bordspannung ${U} V. Wie groß ist der Strom aus der Batterie?`,
+     given:[["P_ab",de(Pab,0)+" W"],["η",eta*100+" %"],["U",U+" V"]],unit:"A",ans:I,tol:0.01,
+     steps:`1. P_zu = P_ab / η = ${de(Pab,0)} W / ${de(eta,1)} = ${Pzu} W\n2. I = P_zu / U = ${Pzu} W / ${U} V = ${I} A`};}},
  sicherung:{name:"Sicherung auswählen",gen(){
-   const P=pick([60,90,120,180,250,350,500]),U=pick([12,14]),I=P/U,F=nextUp(NORM_F,I*1.0001);
-   return{text:`Ein Verbraucher mit ${P} W wird an ${U} V betrieben. Welche Sicherung (nächster Normwert über dem Betriebsstrom) wird eingesetzt?`,
-     given:[["P",P+" W"],["U",U+" V"],["Normwerte","5 · 7,5 · 10 · 15 · 20 · 25 · 30 · 40 · 50 · 60 · 80 · 100 · 125 …"]],unit:"A",ans:F,tol:0.001,
-     steps:`I = P / U = ${P} W / ${U} V = ${de(I,2)} A\n→ nächster Normwert darüber: ${de(F,1)} A\n(Leitung muss diesen Strom dauerhaft vertragen.)`};}},
- antenne:{name:"λ/4-Antennenlänge",gen(){
-   const f=pick([88,90,95,98,100,104,107,180,200,225]),lam=300/f,q=lam/4*100;
-   return{text:`Wie lang muss eine λ/4-Antenne für ${f} MHz sein? Ergebnis in cm.`,
-     given:[["f",f+" MHz"],["c","300 000 000 m/s"]],unit:"cm",ans:q,tol:0.02,
-     steps:`λ = c / f = 300 000 000 m/s / ${f} 000 000 Hz = ${de(lam,3)} m\nλ/4 = ${de(lam,3)} m / 4 = ${de(lam/4,3)} m = ${de(q,1)} cm`};}},
- batterie:{name:"Laufzeit Zusatzbatterie",gen(){
-   const C=pick([60,70,80,95,100,120]),I=pick([2,3,4,5,6,8]),use=pick([0.5,0.5,0.8]),t=C*use/I;
-   return{text:`Eine Kühlbox zieht ${I} A aus einer Zusatzbatterie mit ${C} Ah. Es sollen nur ${de(use*100,0)} % der Kapazität genutzt werden. Wie lange läuft die Kühlbox?`,
-     given:[["C",C+" Ah"],["I",I+" A"],["nutzbar",de(use*100,0)+" %"]],unit:"h",ans:t,tol:0.02,
-     steps:`C_nutz = ${C} Ah · ${de(use,1)} = ${de(C*use,1)} Ah\nt = C_nutz / I = ${de(C*use,1)} Ah / ${I} A = ${de(t,2)} h`};}},
+   const I=pick([4,6,9,13,18,22,28,35]),U=12,P=I*U,F=nextUp(NORM_F,I+0.001);
+   return{text:`Ein Verbraucher mit ${P} W hängt an ${U} V. Welche Sicherung nimmst du (nächster Normwert über dem Strom)?`,
+     given:[["P",P+" W"],["U",U+" V"],["Normwerte","5 · 7,5 · 10 · 15 · 20 · 25 · 30 · 40 · 50 A"]],unit:"A",ans:F,tol:0.001,
+     steps:`1. I = P / U = ${P} W / ${U} V = ${I} A\n2. Nächster Normwert darüber: ${de(F,1)} A`};}},
  stuetzlast:{name:"Mindest-Stützlast",gen(){
-   const m=pick([450,500,600,750,900,1100,1300,1500,1800]),s=Math.max(25,m*0.04);
-   return{text:`Ein beladener Anhänger wiegt ${m} kg. Wie groß muss die Stützlast mindestens sein?`,
-     given:[["Anhängergewicht",m+" kg"],["Regel","4 %, mind. 25 kg"]],unit:"kg",ans:s,tol:0.01,
-     steps:`4 % von ${m} kg = 0,04 · ${m} kg = ${de(m*0.04,1)} kg\n${m*0.04<25?"Das ist unter 25 kg → Mindestwert 25 kg gilt.":"Das ist über 25 kg → "+de(s,1)+" kg."}\nAußerdem: Der kleinere zulässige Wert von Fahrzeug und Anhänger darf nicht überschritten werden.`};}},
- snr:{name:"Signal-Rausch-Abstand",gen(){
-   const volt=Math.random()<0.5,k=pick([2,3,4,5]),ratio=Math.pow(10,k),db=(volt?20:10)*k;
-   const S=volt?pick([1,2]):pick([10,50]),N=S/ratio;
-   return{text:volt?`Ein Radio liefert ein Nutzsignal von ${S} V, die Rauschspannung beträgt ${de(N*1000,4)} mV. Wie groß ist der Signal-Rausch-Abstand?`
-                   :`Ein Verstärker gibt ${S} W Nutzleistung ab, die Rauschleistung beträgt ${de(N*1000,4)} mW. Wie groß ist der Signal-Rausch-Abstand?`,
-     given:volt?[["U_S",S+" V"],["U_R",de(N*1000,4)+" mV"]]:[["P_S",S+" W"],["P_R",de(N*1000,4)+" mW"]],unit:"dB",ans:db,tol:0.01,
-     steps:volt?`Spannungsverhältnis: U_S / U_R = ${S} V / ${de(N,6)} V = ${ratio.toLocaleString("de-DE")}\nSNR = 20 · log(${ratio.toLocaleString("de-DE")}) = 20 · ${k} = ${db} dB`
-               :`Leistungsverhältnis: P_S / P_R = ${S} W / ${de(N,7)} W = ${ratio.toLocaleString("de-DE")}\nSNR = 10 · log(${ratio.toLocaleString("de-DE")}) = 10 · ${k} = ${db} dB`};}},
- angebot:{name:"Angebot berechnen (brutto)",gen(){
-   const T=pick([180,240,320,450,600]),h=pick([1,1.5,2,2.5,3,4]),S=pick([75,85,95,110]),net=T+h*S,br=net*1.19;
-   return{text:`Für eine Nachrüstung kosten die Teile ${T} € netto. Die Arbeitszeit beträgt ${de(h,1)} h bei einem Stundensatz von ${S} € netto. Wie hoch ist der Gesamtpreis inklusive 19 % MwSt.?`,
-     given:[["Teile",T+" €"],["Arbeitszeit",de(h,1)+" h"],["Stundensatz",S+" €/h"],["MwSt.","19 %"]],unit:"€",ans:br,tol:0.005,
-     steps:`Arbeitskosten = ${de(h,1)} h · ${S} €/h = ${de(h*S,2)} €\nNetto = ${T} € + ${de(h*S,2)} € = ${de(net,2)} €\nBrutto = ${de(net,2)} € · 1,19 = ${de(br,2)} €`};}},
+   const m=pick([500,750,1000,1200,1500,2000]),s=Math.max(25,m*0.04);
+   return{text:`Ein Anhänger wiegt ${m} kg. Wie groß muss die Stützlast mindestens sein (4 %)?`,
+     given:[["Anhänger",m+" kg"],["Regel","4 %, mind. 25 kg"]],unit:"kg",ans:s,tol:0.01,
+     steps:`0,04 · ${m} kg = ${de(m*0.04,1)} kg${m*0.04<25?" → unter 25 kg, also gilt 25 kg":""}`};}},
  einheiten:{name:"Einheiten umrechnen",gen(){
    const tasks=[
-     ()=>{const v=pick([250,500,750,1500,2200,80]);return{t:`${v} mA in A`,u:"A",a:v/1000,s:`${v} mA ÷ 1000 = ${de(v/1000,3)} A`}},
-     ()=>{const v=pick([0.5,1.2,2.5,3.6]);return{t:`${de(v,1)} kW in W`,u:"W",a:v*1000,s:`${de(v,1)} kW · 1000 = ${de(v*1000,0)} W`}},
-     ()=>{const v=pick([0.04,0.25,0.6,0.075]);return{t:`${de(v,3)} A in mA`,u:"mA",a:v*1000,s:`${de(v,3)} A · 1000 = ${de(v*1000,1)} mA`}},
-     ()=>{const v=pick([1500,4700,2200,330]);return{t:`${v} Ω in kΩ`,u:"kΩ",a:v/1000,s:`${v} Ω ÷ 1000 = ${de(v/1000,3)} kΩ`}},
-     ()=>{const v=pick([100,174,225,95]);return{t:`${v} MHz in kHz`,u:"kHz",a:v*1000,s:`${v} MHz · 1000 = ${(v*1000).toLocaleString("de-DE")} kHz`}},
-     ()=>{const v=pick([2200,4700,1000,680]);return{t:`${v} µF in mF`,u:"mF",a:v/1000,s:`${v} µF ÷ 1000 = ${de(v/1000,3)} mF`}},
-     ()=>{const v=pick([30,45,90,150]);return{t:`${v} min in h`,u:"h",a:v/60,s:`${v} min ÷ 60 = ${de(v/60,2)} h`}}];
+     ()=>{const v=pick([250,500,1500,2000]);return{t:`${v} mA in A`,u:"A",a:v/1000,s:`${v} mA ÷ 1000 = ${de(v/1000,3)} A`}},
+     ()=>{const v=pick([0.5,1,1.5,2]);return{t:`${de(v,1)} kW in W`,u:"W",a:v*1000,s:`${de(v,1)} kW · 1000 = ${de(v*1000,0)} W`}},
+     ()=>{const v=pick([0.1,0.25,0.5]);return{t:`${de(v,2)} A in mA`,u:"mA",a:v*1000,s:`${de(v,2)} A · 1000 = ${de(v*1000,0)} mA`}},
+     ()=>{const v=pick([1000,2000,4700]);return{t:`${v} Ω in kΩ`,u:"kΩ",a:v/1000,s:`${v} Ω ÷ 1000 = ${de(v/1000,1)} kΩ`}},
+     ()=>{const v=pick([30,90,120]);return{t:`${v} min in h`,u:"h",a:v/60,s:`${v} min ÷ 60 = ${de(v/60,1)} h`}}];
    const x=pick(tasks)();
    return{text:`Rechne um: ${x.t}`,given:[],unit:x.u,ans:x.a,tol:0.005,steps:x.s};}}
 };
@@ -628,24 +557,18 @@ function check(reveal){
 
 /* ---------- Formeln ---------- */
 const F=[
-["Wellenlänge","λ = c / f","c = 300 000 km/s · Antenne optimal λ/4"],
-["Leistung","P = U · I","auch P = I² · R = U² / R"],
-["Ohmsches Gesetz","U = R · I","bei Lautsprechern R ≈ Z"],
-["Wirkungsgrad","η = P_ab / P_zu","immer < 1, Rest = Wärme"],
-["Strom Endstufe","I = P_ab / (η · U)","erst P_zu, dann I"],
-["Reihenschaltung","Z = Z1 + Z2 + …","2 × 4 Ω = 8 Ω"],
-["Parallel (gleiche Z)","Z = Z1 / n","2 × 4 Ω = 2 Ω"],
-["Parallel (allgemein)","1/Z = 1/Z1 + 1/Z2","Z = Z1·Z2 / (Z1+Z2)"],
-["Leiterwiderstand","R = l / (κ · A)","Kupfer κ = 56 m/(Ω·mm²)"],
-["Querschnitt (Masse über Karosserie)","A = I · l / (κ · ΔU)","danach Normquerschnitt"],
-["Querschnitt (Hin + Rück)","A = 2 · l · I / (κ · ΔU)","beide Leitungen zählen"],
-["Spannungsfall","ΔU = I · R_Leitung","möglichst klein halten"],
-["SNR Spannung","SNR = 20 · log(U_S / U_R)","in dB, groß = gut"],
-["SNR Leistung","SNR = 10 · log(P_S / P_R)","+3 dB = doppelte Leistung"],
-["Batteriekapazität","C = I · t","Ah = A · h"],
-["Stützlast min.","S ≥ 4 % · m_Anhänger","mindestens 25 kg"],
-["Weichen-Steilheit","6 dB/Oktave je Ordnung","2. Ordnung = 12 dB/Okt."],
-["Vorsätze","µ 10⁻⁶ · m 10⁻³ · k 10³ · M 10⁶","1 mA = 0,001 A"]
+["Leistung","P = U · I","Watt = Volt · Ampere"],
+["Strom","I = P / U","120 W / 12 V = 10 A"],
+["Ohmsches Gesetz","U = R · I","I = U / R"],
+["Wirkungsgrad","η = P_ab / P_zu","immer unter 100 %"],
+["Strom Endstufe","1. P_zu = P_ab / η","2. I = P_zu / U"],
+["Reihenschaltung","Z = Z1 + Z2","4 Ω + 4 Ω = 8 Ω"],
+["Parallel (zwei gleiche)","Z = Z1 / 2","4 Ω parallel 4 Ω = 2 Ω"],
+["Sicherung","nächster Normwert über I","I = 13 A → 15 A"],
+["Leitung","nächstgrößerer Normquerschnitt","nie kleiner wählen"],
+["Antenne","Länge ≈ λ/4","UKW ≈ 75 cm"],
+["Stützlast","mind. 4 % vom Anhänger","mind. 25 kg"],
+["Vorsätze","m = 1/1000 · k = 1000","1 mA = 0,001 A"]
 ];
 function renderFormulas(){
   $("#formulas").innerHTML=F.map(([n,e,h])=>`<div class="f"><span class="n">${esc(n)}</span><span class="e">${esc(e)}</span><span class="h">${esc(h)}</span></div>`).join("");
