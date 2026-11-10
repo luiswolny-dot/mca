@@ -85,6 +85,7 @@ main section{padding-block:20px;display:flex;flex-direction:column;gap:16px}
 .merk::before{content:"Merke";display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .tactions{display:flex;flex-wrap:wrap;gap:8px}
 .mono{font-family:var(--f-mono);font-size:.92em}
+.rlp{font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;padding:1px 5px;border-radius:4px;background:var(--accent-soft);color:var(--ink);border:1px solid var(--accent);vertical-align:2px}
 table.pins{border-collapse:collapse;font-size:14px;width:100%}
 .tablebox{overflow-x:auto}
 table.pins th,table.pins td{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
@@ -150,7 +151,7 @@ label.lbl{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-tra
   <header class="top">
     <div class="eyebrow">Klassenarbeit · Lernfeld 14 · Nachrüstung</div>
     <h1>LF14 <span>Lernbox</span></h1>
-    <div class="progress"><div class="bar"><i id="pbar"></i></div><small id="ptext">0 / 11 Themen</small></div>
+    <div class="progress"><div class="bar"><i id="pbar"></i></div><small id="ptext">0 / 12 Themen</small></div>
   </header>
 
   <nav class="tabs" aria-label="Bereiche">
@@ -162,7 +163,7 @@ label.lbl{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-tra
 
   <main>
     <section id="v-themen">
-      <p class="lead">Die elf Themen aus dem Lehrstoff. Aufklappen, durchlesen, als gelernt markieren. Danach direkt zum passenden Quiz springen.</p>
+      <p class="lead">Die elf Themen aus dem Lehrstoff, ergänzt um Inhalte aus dem Rahmenlehrplan (LF 14P). Punkte mit <span class="rlp">RLP</span> stammen aus dem Rahmenlehrplan. Thema 12 steht nicht auf der Liste deines Lehrers.</p>
       <div id="topics" style="display:flex;flex-direction:column;gap:10px"></div>
     </section>
 
@@ -215,6 +216,12 @@ const TOPICS=[
 <li><b>Bewerten:</b> Soll-Ist-Vergleich, was lief gut, was beim nächsten Mal besser machen.</li>
 <li><b>Projektplanung:</b> Ziel festlegen, Arbeitspakete bilden, Reihenfolge und Abhängigkeiten, Zeitplan (z.&nbsp;B. Balkenplan/Gantt), Meilensteine, Verantwortliche, Kosten- und Materialliste.</li>
 </ul>
+<ul>
+<li><b>Dokumentation</b> <span class="rlp">RLP</span>: Arbeitsablauf und Einbau dokumentieren, fahrzeugspezifische Unterlagen vervollständigen (Betriebserlaubnis, Abnahme, Eintragung). Ausgebaute Altteile für die Übergabe vorbereiten und auf Vollständigkeit prüfen.</li>
+<li><b>Übergabe und Einweisung</b> <span class="rlp">RLP</span>: Fahrzeug übergeben, die neue Funktion vorführen, den Kunden mit der Bedienung vertraut machen, Unterlagen übergeben (Bedienungsanleitung, Bescheinigungen).</li>
+<li><b>Zielkonflikte</b> <span class="rlp">RLP</span>: Kundenwunsch, Technik und Vorschriften passen nicht immer zusammen. Beispiel: Der Kunde will maximale Lautstärke und billig, aber die Bordnetzbelastung, die Sicherheit oder die Zulassung erlauben das nicht. Lösung: aufklären, Alternativen anbieten, Vorschriften haben Vorrang.</li>
+<li><b>Bewerten</b> heißt auch: Was kann der Betrieb bei Vorgehen und Kommunikation mit dem Kunden verbessern?</li>
+</ul>
 <div class="merk">„Kontrollieren“ prüft das Ergebnis der Arbeit. „Bewerten“ prüft den ganzen Ablauf und zieht Lehren für das nächste Mal.</div>`},
 {id:"kunde",name:"Kundengespräch & Anforderungen an Nachrüstungen",html:`
 <ul>
@@ -224,6 +231,12 @@ const TOPICS=[
 <li><b>Technische Anforderungen:</b> passt es zum Fahrzeug (Typ, Baujahr, Einbauraum), Belastung des Bordnetzes und der Batterie, Integration in CAN-Bus/Steuergeräte, Codierung nötig?</li>
 <li><b>Rechtliche Anforderungen:</b> Teil mit ABE, EG-Typgenehmigung oder E-Prüfzeichen? Sonst Teilegutachten und Eintragung (Prüforganisation). Herstellergarantie und Gewährleistung beachten.</li>
 <li><b>Ergebnis festhalten:</b> Auftrag schriftlich mit Umfang, Preis/Kostenvoranschlag, Termin und Unterschrift.</li>
+</ul>
+<ul>
+<li><b>Technische Voraussetzungen ermitteln</b> <span class="rlp">RLP</span>: mit Herstellerunterlagen, Schaltplänen und Informationssystemen der Branche prüfen, ob die Nachrüstung mechanisch und elektrisch möglich ist.</li>
+<li><b>Verfügbarkeit und Angebotsvergleich</b> <span class="rlp">RLP</span>: Teile auf Lager oder lieferbar? Mehrere Angebote nach <b>Qualität</b> und <b>Kosten</b> vergleichen.
+  <br>Gesamtpreis = Teilekosten + Arbeitskosten (Arbeitszeit · Stundensatz), dazu 19 % MwSt. Das billigste Angebot ist nicht immer das beste (Qualität, Garantie, Aufwand).</li>
+<li><b>Wirtschaftlich arbeiten</b> <span class="rlp">RLP</span>: Material und Arbeitszeit sparsam und kundenfreundlich einsetzen.</li>
 </ul>
 <div class="merk">Erst Bedarf ermitteln, dann Lösung anbieten. Der Kunde muss vor dem Einbau wissen, was es kostet und ob eine Eintragung nötig ist.</div>`},
 {id:"antenne",name:"Fahrzeugantennen",html:`
@@ -266,6 +279,13 @@ const TOPICS=[
 <li><b>Remote-Leitung:</b> schaltet die Endstufe mit dem Radio ein (ca. 12 V). Ohne Remote läuft die Endstufe dauerhaft → Batterie leer.</li>
 <li><b>DSP-Verstärker:</b> digitale Klangbearbeitung (EQ, Laufzeitkorrektur, Weichen). Ideal, wenn das Werksradio bleiben soll (Plug &amp; Play-Kabelbaum).</li>
 <li><b>Aktiv-Subwoofer:</b> Subwoofer mit eingebautem Verstärker, platzsparend (z.&nbsp;B. unter dem Sitz).</li>
+</ul>
+<ul>
+<li><b>In den Fahrzeugverbund einbinden</b> <span class="rlp">RLP</span> (mit dem Diagnosetester):
+  <br>– <b>Einbinden:</b> das neue Steuergerät oder Bauteil im Netzwerk anmelden.
+  <br>– <b>Anlernen:</b> das System lernt Bauteile oder Werte kennen (z.&nbsp;B. Funkschlüssel, Lenkwinkel, Fensterheber-Endlagen).
+  <br>– <b>Freischalten:</b> eine Funktion wird aktiviert, oft online beim Hersteller (z.&nbsp;B. Anhängerbetrieb).
+  <br>– <b>Codieren:</b> dem Steuergerät die Ausstattung mitteilen (z.&nbsp;B. „AHK verbaut“ → PDC aus bei Anhänger, ESP-Gespannstabilisierung).</li>
 </ul>
 <div class="merk">Werksradio bleibt + keine Cinch-Ausgänge → High-Level-Eingang oder DSP. Remote-Leitung nie vergessen.</div>`},
 {id:"klang",name:"Klangqualität, Signal-Rausch-Abstand, Klangeinstellungen",html:`
@@ -312,6 +332,14 @@ const TOPICS=[
 <li><b>Mechanisch:</b> Endstufe, Subwoofer, Zusatzbatterie <b>crashsicher</b> befestigen (bei einem Unfall werden lose Teile zu Geschossen). Kühlung der Endstufe frei halten.</li>
 <li><b>Abschluss:</b> Funktionsprüfung aller Verbraucher, Fehlerspeicher auslesen und löschen, Ruhestrom messen.</li>
 </ul>
+<ul>
+<li><b>Sicherheitsvorschriften nach Rahmenlehrplan</b> <span class="rlp">RLP</span>:
+  <br>– <b>technisch:</b> Absicherung, Leitungsquerschnitt, Befestigung.
+  <br>– <b>verkehrstechnisch:</b> Zulassung, Beleuchtungsvorschriften, nichts darf die Sicht nach vorne oder hinten verdecken.
+  <br>– <b>Bedienungssicherheit:</b> Bedienung darf nicht vom Verkehr ablenken (z.&nbsp;B. Freisprecheinrichtung statt Handy in der Hand).
+  <br>– <b>ergonomisch:</b> Bedienteile gut erreichbar, Displays im Blickfeld, aber nicht im Airbag- oder Sichtbereich.</li>
+<li><b>Messmittel:</b> Multimeter, Strommesszange, Diagnosetester, Stützlastwaage. Passend zur Aufgabe auswählen.</li>
+</ul>
 <div class="merk">Minus zuerst ab, Minus zuletzt an. Jede Plusleitung von der Batterie wird direkt am Anfang abgesichert.</div>`},
 {id:"batterie",name:"Zusatzbatterien & Trennrelais",html:`
 <ul>
@@ -353,7 +381,16 @@ const TOPICS=[
 <tr><td>12</td><td>Anhängererkennung / frei</td><td>–</td></tr>
 <tr><td>13</td><td>Masse für 9</td><td>–</td></tr>
 </tbody></table></div>
-<div class="merk">Stützlast: kleinster zulässiger Wert gilt, mindestens 4 % vom Anhängergewicht, mindestens 25 kg.</div>`}
+<div class="merk">Stützlast: kleinster zulässiger Wert gilt, mindestens 4 % vom Anhängergewicht, mindestens 25 kg.</div>`},
+{id:"rlpextra",name:"Rahmenlehrplan-Extra: Licht, Gas, Funk",html:`
+<p style="color:var(--muted)">Diese Themen stehen im Rahmenlehrplan, aber nicht auf der Liste deines Lehrers. Nur kurz anschauen, wenn Zeit bleibt.</p>
+<ul>
+<li><b>Lichttechnische Anlagen:</b> Zusatzscheinwerfer (Fernlicht, Nebelscheinwerfer), Tagfahrlicht. Nur Teile mit <b>E-Prüfzeichen</b>, Anbauvorschriften (Höhe, Abstand, Anzahl) beachten, Scheinwerfer danach einstellen. LED-Nachrüstlampen nur mit Genehmigung für das Fahrzeug.</li>
+<li><b>Gasbetriebanlagen (LPG/CNG):</b> Gastank, Verdampfer/Druckregler, Einblasventile, Umschaltung Benzin/Gas. Einbau nur durch geschultes Personal, Gasanlagenprüfung (GAP) und Eintragung nötig.</li>
+<li><b>Drahtlose Signalübertragung:</b> Bluetooth (Freisprechen, Musik-Streaming), WLAN, Smartphone-Anbindung (Apple CarPlay, Android Auto), Funk-Rückfahrkamera. Vorteil: weniger Leitungen. Nachteil: Störanfälligkeit, Kopplung nötig.</li>
+<li><b>Unterhaltungselektronik:</b> Radio, Navigation, Bildschirme. Bildschirme für Videos dürfen während der Fahrt nicht im Blickfeld des Fahrers laufen.</li>
+</ul>
+<div class="merk">Nachrüstung ohne Prüfzeichen oder Eintragung → Betriebserlaubnis kann erlöschen.</div>`}
 ];
 
 const learned=new Set(store.get("learned",[]));
@@ -423,7 +460,16 @@ const Q=[
 {t:"ahk",q:"Wie hoch muss die Stützlast mindestens sein?",a:["4 % des tatsächlichen Anhängergewichts, mindestens 25 kg","10 % des Anhängergewichts","Genau 50 kg","Es gibt keine Mindestgrenze"],e:"Zu wenig Stützlast macht das Gespann instabil, der Anhänger kann pendeln."},
 {t:"ahk",q:"Welche Funktion hat Pin 9 der 13-poligen Steckdose?",a:["Dauerplus (Klemme 30)","Rückfahrlicht","Bremslicht","Blinker links"],e:"Pin 9 = Dauerplus, Pin 10 = Ladeleitung, Pin 8 = Rückfahrlicht, Pin 6 = Bremslicht, Pin 1 = Blinker links."},
 {t:"ahk",q:"Was kann ein fahrzeugspezifischer E-Satz, was ein universeller meist nicht kann?",a:["PDC-Abschaltung, Anhängerstabilisierung im ESP und Blinkerüberwachung über CAN-Bus","Bremslicht ansteuern","Blinker ansteuern","Schlusslicht ansteuern"],e:"Licht und Blinker kann jeder E-Satz. Komfort- und Sicherheitsfunktionen brauchen das Anhängersteuergerät und eine Codierung."},
-{t:"ahk",q:"Was passiert bei zu hoher Stützlast?",a:["Hinterachse überlastet, Vorderachse entlastet → schlechtere Lenkung und Bremswirkung","Anhänger pendelt stärker","Nichts","Der Anhänger hebt vorne ab"],e:"Zu viel Last auf dem Kugelkopf drückt das Heck herunter und nimmt der Vorderachse Gewicht."}
+{t:"ahk",q:"Was passiert bei zu hoher Stützlast?",a:["Hinterachse überlastet, Vorderachse entlastet → schlechtere Lenkung und Bremswirkung","Anhänger pendelt stärker","Nichts","Der Anhänger hebt vorne ab"],e:"Zu viel Last auf dem Kugelkopf drückt das Heck herunter und nimmt der Vorderachse Gewicht."},
+{t:"handlung",q:"Was gehört laut Rahmenlehrplan zur Fahrzeugübergabe nach einer Nachrüstung?",a:["Einweisung des Kunden in die Bedienung und Übergabe der Unterlagen und Altteile","Nur die Rechnung","Fehlerspeicher löschen ohne Kundenkontakt","Das Fahrzeug unkommentiert auf den Hof stellen"],e:"Der Kunde soll mit der Handhabung vertraut sein. Dazu kommen Dokumentation, Bescheinigungen und die ausgebauten Teile."},
+{t:"handlung",q:"Ein Kunde will eine sehr laute Anlage ohne Eintragung zum Billigpreis. Wie nennt man diese Situation?",a:["Zielkonflikt zwischen Kundenwunsch, Technik und Vorschriften","Vollständige Handlung","Codierung","Angebotsvergleich"],e:"Man klärt den Kunden auf und bietet Alternativen an. Vorschriften und Sicherheit gehen vor."},
+{t:"handlung",q:"Welche Unterlagen werden nach einer genehmigungspflichtigen Nachrüstung vervollständigt?",a:["Betriebserlaubnis, Abnahme, Eintragung in die Fahrzeugpapiere","Nur der Werkstattauftrag","Die Bedienungsanleitung des Radios","Der Wartungsplan"],e:"Der Rahmenlehrplan nennt ausdrücklich: Allgemeine Betriebserlaubnis, Abnahmen, Eintragungen."},
+{t:"kunde",q:"Angebot A: Teile 300 €, 2 h Arbeit. Angebot B: Teile 250 €, 3 h Arbeit. Stundensatz 80 €. Welches ist netto günstiger?",a:["A mit 460 € (B kostet 490 €)","B mit 490 €","Beide gleich","A mit 380 €"],e:"A: 300 + 2 · 80 = 460 €. B: 250 + 3 · 80 = 490 €. Die Arbeitskosten machen den Unterschied."},
+{t:"konzepte",q:"Nach dem Einbau einer AHK teilt man dem Steuergerät mit dem Tester mit, dass sie verbaut ist. Wie heißt das?",a:["Codieren","Anlernen","Kalibrieren","Flashen der Batterie"],e:"Codieren = Ausstattung im Steuergerät hinterlegen. Anlernen = Bauteile oder Werte einlernen (z. B. Funkschlüssel)."},
+{t:"konzepte",q:"Was bedeutet „Freischalten“ einer Funktion?",a:["Eine Funktion wird aktiviert, oft online über den Hersteller","Eine Sicherung wird entfernt","Der Fehlerspeicher wird gelöscht","Die Batterie wird abgeklemmt"],e:"Manche Funktionen sind im Steuergerät vorhanden, müssen aber erst vom Hersteller freigegeben werden."},
+{t:"sicherheit",q:"Ein Monitor soll so eingebaut werden, dass der Fahrer ihn gut sieht, ohne vom Verkehr abgelenkt zu werden. Welche Sicherheitsanforderung ist das?",a:["Ergonomie und Bedienungssicherheit","Elektrische Absicherung","Ladungssicherung","Korrosionsschutz"],e:"Der Rahmenlehrplan unterscheidet technische, verkehrstechnische, Bedienungs- und ergonomische Sicherheit."},
+{t:"rlpextra",q:"Was brauchen nachgerüstete Zusatzscheinwerfer?",a:["E-Prüfzeichen und richtigen Anbau nach Vorschrift","Nur eine Sicherung","Nichts, wenn sie hell genug sind","Eine Gasanlagenprüfung"],e:"Lichttechnische Teile müssen genehmigt sein, und Anbauhöhe, Abstände und Einstellung müssen stimmen."},
+{t:"rlpextra",q:"Was ist nach dem Einbau einer Autogasanlage (LPG) Pflicht?",a:["Gasanlagenprüfung und Eintragung","Nur ein Ölwechsel","Codierung des Radios","Nichts"],e:"Gasanlagen sind sicherheitsrelevant und müssen abgenommen und eingetragen werden."}
 ];
 let quizTopic="alle", quiz=null;
 const LETTERS=["A","B","C","D"];
@@ -526,6 +572,11 @@ const CALC={
      given:volt?[["U_S",S+" V"],["U_R",de(N*1000,4)+" mV"]]:[["P_S",S+" W"],["P_R",de(N*1000,4)+" mW"]],unit:"dB",ans:db,tol:0.01,
      steps:volt?`Spannungsverhältnis: U_S / U_R = ${S} V / ${de(N,6)} V = ${ratio.toLocaleString("de-DE")}\nSNR = 20 · log(${ratio.toLocaleString("de-DE")}) = 20 · ${k} = ${db} dB`
                :`Leistungsverhältnis: P_S / P_R = ${S} W / ${de(N,7)} W = ${ratio.toLocaleString("de-DE")}\nSNR = 10 · log(${ratio.toLocaleString("de-DE")}) = 10 · ${k} = ${db} dB`};}},
+ angebot:{name:"Angebot berechnen (brutto)",gen(){
+   const T=pick([180,240,320,450,600]),h=pick([1,1.5,2,2.5,3,4]),S=pick([75,85,95,110]),net=T+h*S,br=net*1.19;
+   return{text:`Für eine Nachrüstung kosten die Teile ${T} € netto. Die Arbeitszeit beträgt ${de(h,1)} h bei einem Stundensatz von ${S} € netto. Wie hoch ist der Gesamtpreis inklusive 19 % MwSt.?`,
+     given:[["Teile",T+" €"],["Arbeitszeit",de(h,1)+" h"],["Stundensatz",S+" €/h"],["MwSt.","19 %"]],unit:"€",ans:br,tol:0.005,
+     steps:`Arbeitskosten = ${de(h,1)} h · ${S} €/h = ${de(h*S,2)} €\nNetto = ${T} € + ${de(h*S,2)} € = ${de(net,2)} €\nBrutto = ${de(net,2)} € · 1,19 = ${de(br,2)} €`};}},
  einheiten:{name:"Einheiten umrechnen",gen(){
    const tasks=[
      ()=>{const v=pick([250,500,750,1500,2200,80]);return{t:`${v} mA in A`,u:"A",a:v/1000,s:`${v} mA ÷ 1000 = ${de(v/1000,3)} A`}},
@@ -614,6 +665,7 @@ renderTopics();updateProgress();renderFormulas();renderCalcSelect();newCalc();
 window.addEventListener("hashchange",route);route();
 })();
 </script>
+
 
 </body>
 </html>
