@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body>
+<title>LF14 Lernbox</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: Werkstatt-Datenblatt – schmale Lesespalte, Reiter oben (Desktop) bzw. Tab-Leiste unten (Handy) */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --ink:#18202a; --muted:#5b6673; --line:#d3d9e0;
+  --accent:#e08a00; --accent-ink:#1b1300; --accent-soft:#fff1d9;
+  --ok:#1d7a46; --ok-soft:#e1f3e8; --bad:#b3261e; --bad-soft:#fbe5e3;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171d; --surface:#1b222b; --ink:#e6eaef; --muted:#97a2ae; --line:#2e3844;
+  --accent:#f5a524; --accent-ink:#1b1300; --accent-soft:#33270f;
+  --ok:#5cc98a; --ok-soft:#163223; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171d; --surface:#1b222b; --ink:#e6eaef; --muted:#97a2ae; --line:#2e3844;
+  --accent:#f5a524; --accent-ink:#1b1300; --accent-soft:#33270f;
+  --ok:#5cc98a; --ok-soft:#163223; --bad:#ff8a80; --bad-soft:#3a1c1a; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-bottom:88px}
+.wrap{max-width:760px;margin:0 auto}
+header.top{padding-block:20px 8px;display:flex;flex-direction:column;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:2.4rem;line-height:1;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1 span{color:var(--accent)}
+h2{font-family:var(--f-display);font-weight:700;font-size:1.6rem;margin:0;line-height:1.1;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:600;font-size:1.25rem;margin:0;line-height:1.15}
+p{margin:0}
+.progress{display:flex;align-items:center;gap:12px;margin-top:6px}
+.bar{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.progress small{font-family:var(--f-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);
+  background:var(--surface);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;color:var(--muted);text-decoration:none;
+  font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.03em;text-transform:uppercase}
+nav.tabs a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8}
+nav.tabs a[aria-current="page"]{color:var(--accent)}
+nav.tabs a:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+@media (min-width:720px){
+  nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);bottom:auto;display:flex;gap:4px;border:0;border-bottom:1px solid var(--line);
+    background:var(--bg);margin-top:10px;padding:0}
+  nav.tabs a{flex-direction:row;gap:8px;padding:12px 14px;border-bottom:3px solid transparent;margin-bottom:-1px}
+  nav.tabs a[aria-current="page"]{border-bottom-color:var(--accent);color:var(--ink)}
+  body{padding-bottom:40px}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+}
+
+main section{padding-block:20px;display:flex;flex-direction:column;gap:16px}
+.lead{color:var(--muted);max-width:62ch}
+
+/* Themen */
+.topic{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.topic>summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:14px 16px}
+.topic>summary::-webkit-details-marker{display:none}
+.topic>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tnum{font-family:var(--f-mono);font-size:13px;color:var(--muted);width:2ch;text-align:right}
+.tname{font-weight:600;min-width:0}
+.tstate{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;
+  border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.topic.done .tstate{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.tbody{padding:0 16px 16px 16px;display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:14px}
+.tbody ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px}
+.tbody li{max-width:66ch}
+.tbody b{font-weight:600}
+.merk{background:var(--accent-soft);border-left:3px solid var(--accent);padding:10px 12px;border-radius:0 6px 6px 0;font-size:15px}
+.merk::before{content:"Merke";display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.tactions{display:flex;flex-wrap:wrap;gap:8px}
+.mono{font-family:var(--f-mono);font-size:.92em}
+table.pins{border-collapse:collapse;font-size:14px;width:100%}
+.tablebox{overflow-x:auto}
+table.pins th,table.pins td{border-bottom:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+table.pins th{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+table.pins td:first-child{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* Buttons */
+button,.btn{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  padding:10px 16px;cursor:pointer;min-height:44px}
+button:hover{border-color:var(--muted)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.primary:hover{filter:brightness(1.05)}
+button:disabled{opacity:.5;cursor:default}
+
+/* Quiz */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.qmeta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.qtext{font-size:1.12rem;font-weight:600;line-height:1.4}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font-weight:500;display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;padding:12px 14px}
+.opt .k{font-family:var(--f-mono);font-size:13px;width:24px;height:24px;border-radius:6px;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.right .k{background:var(--ok);color:var(--surface);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt.wrong .k{background:var(--bad);color:var(--surface);border-color:var(--bad)}
+.explain{font-size:15px;padding:12px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+.explain strong{display:block;margin-bottom:2px}
+.explain.ok strong{color:var(--ok)} .explain.no strong{color:var(--bad)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row.end{justify-content:flex-end}
+select,input[type=text]{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-height:44px;max-width:100%}
+label.lbl{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.score{font-family:var(--f-display);font-size:3rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.review{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.review li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:15px}
+.review li .m{font-family:var(--f-mono);font-weight:500}
+.review li.r .m{color:var(--ok)} .review li.f .m{color:var(--bad)}
+
+/* Rechnen */
+.given{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.given div{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.given dt{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.given dd{margin:0;font-family:var(--f-mono);font-size:16px;font-variant-numeric:tabular-nums}
+.ansrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ansrow input{width:9em;font-family:var(--f-mono)}
+.unit{font-family:var(--f-mono);color:var(--muted)}
+.steps{font-family:var(--f-mono);font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-x:auto;margin:0}
+.tally{font-family:var(--f-mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Formeln */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.f{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.f .n{font-size:13px;color:var(--muted)}
+.f .e{font-family:var(--f-mono);font-size:17px;font-weight:500;overflow-x:auto}
+.f .h{font-size:13px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips span{font-family:var(--f-mono);font-size:13px;border:1px solid var(--line);border-radius:6px;padding:2px 8px;background:var(--surface)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Klassenarbeit · Lernfeld 14 · Nachrüstung</div>
+    <h1>LF14 <span>Lernbox</span></h1>
+    <div class="progress"><div class="bar"><i id="pbar"></i></div><small id="ptext">0 / 11 Themen</small></div>
+  </header>
+
+  <nav class="tabs" aria-label="Bereiche">
+    <a href="#themen" data-v="themen"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Themen</a>
+    <a href="#quiz" data-v="quiz"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5v.01"/></svg>Quiz</a>
+    <a href="#rechnen" data-v="rechnen"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2"/></svg>Rechnen</a>
+    <a href="#formeln" data-v="formeln"><svg viewBox="0 0 24 24"><path d="M5 5h6l-4 7 4 7H5M14 9l5 6M19 9l-5 6"/></svg>Formeln</a>
+  </nav>
+
+  <main>
+    <section id="v-themen">
+      <p class="lead">Die elf Themen aus dem Lehrstoff. Aufklappen, durchlesen, als gelernt markieren. Danach direkt zum passenden Quiz springen.</p>
+      <div id="topics" style="display:flex;flex-direction:column;gap:10px"></div>
+    </section>
+
+    <section id="v-quiz" hidden>
+      <div id="quiz"></div>
+    </section>
+
+    <section id="v-rechnen" hidden>
+      <p class="lead">Zufällige Rechenaufgaben wie in der Klassenarbeit. Ergebnis eintippen (Komma oder Punkt), prüfen, Lösungsweg ansehen.</p>
+      <div class="row">
+        <label class="lbl" for="calcType">Aufgabentyp</label>
+        <select id="calcType"></select>
+      </div>
+      <div id="calc"></div>
+    </section>
+
+    <section id="v-formeln" hidden>
+      <p class="lead">Alle Formeln und Werte auf einen Blick. Gut für die letzten zehn Minuten vor der Arbeit.</p>
+      <div class="fgrid" id="formulas"></div>
+      <h3>Normquerschnitte (mm²)</h3>
+      <div class="chips" id="normA"></div>
+      <h3>Übliche Sicherungswerte (A)</h3>
+      <div class="chips" id="normF"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- Speicher (optional) ---------- */
+const store={get(k,d){try{const v=localStorage.getItem("lf14:"+k);return v?JSON.parse(v):d}catch(e){return d}},
+             set(k,v){try{localStorage.setItem("lf14:"+k,JSON.stringify(v))}catch(e){}}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const de=(x,d=2)=>{const r=Number(x.toFixed(d));return r.toLocaleString("de-DE",{maximumFractionDigits:d})};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+
+/* ---------- Themen ---------- */
+const TOPICS=[
+{id:"handlung",name:"Vollständige Handlung & Projektplanung",html:`
+<ul>
+<li><b>6 Schritte der vollständigen Handlung:</b> Informieren → Planen → Entscheiden → Ausführen → Kontrollieren → Bewerten.</li>
+<li><b>Informieren:</b> Kundenwunsch, Fahrzeugdaten, Herstellervorgaben, Einbauanleitungen, Zulassungsfragen klären.</li>
+<li><b>Planen:</b> Arbeitsschritte, Material, Werkzeug, Zeitbedarf, Kosten. Mehrere Lösungsvarianten ausarbeiten.</li>
+<li><b>Entscheiden:</b> Variante gemeinsam mit dem Kunden auswählen (Kosten, Nutzen, Aufwand, Zulassung).</li>
+<li><b>Ausführen:</b> Einbau nach Plan, Sicherheitsregeln beachten, Abweichungen dokumentieren.</li>
+<li><b>Kontrollieren:</b> Funktionsprüfung, Sichtprüfung, Messungen, Fehlerspeicher auslesen, Probefahrt.</li>
+<li><b>Bewerten:</b> Soll-Ist-Vergleich, was lief gut, was beim nächsten Mal besser machen.</li>
+<li><b>Projektplanung:</b> Ziel festlegen, Arbeitspakete bilden, Reihenfolge und Abhängigkeiten, Zeitplan (z.&nbsp;B. Balkenplan/Gantt), Meilensteine, Verantwortliche, Kosten- und Materialliste.</li>
+</ul>
+<div class="merk">„Kontrollieren“ prüft das Ergebnis der Arbeit. „Bewerten“ prüft den ganzen Ablauf und zieht Lehren für das nächste Mal.</div>`},
+{id:"kunde",name:"Kundengespräch & Anforderungen an Nachrüstungen",html:`
+<ul>
+<li><b>Gesprächsführung:</b> freundlich begrüßen, aktiv zuhören, nachfragen, zusammenfassen, verständlich ohne Fachchinesisch erklären.</li>
+<li><b>Offene Fragen</b> (W-Fragen: Was, Wofür, Wie oft?) ermitteln den Bedarf. <b>Geschlossene Fragen</b> (Ja/Nein) sichern Entscheidungen ab.</li>
+<li><b>Bedarf klären:</b> Wofür wird die Nachrüstung genutzt? Budget? Optik? Soll das Original erhalten bleiben?</li>
+<li><b>Technische Anforderungen:</b> passt es zum Fahrzeug (Typ, Baujahr, Einbauraum), Belastung des Bordnetzes und der Batterie, Integration in CAN-Bus/Steuergeräte, Codierung nötig?</li>
+<li><b>Rechtliche Anforderungen:</b> Teil mit ABE, EG-Typgenehmigung oder E-Prüfzeichen? Sonst Teilegutachten und Eintragung (Prüforganisation). Herstellergarantie und Gewährleistung beachten.</li>
+<li><b>Ergebnis festhalten:</b> Auftrag schriftlich mit Umfang, Preis/Kostenvoranschlag, Termin und Unterschrift.</li>
+</ul>
+<div class="merk">Erst Bedarf ermitteln, dann Lösung anbieten. Der Kunde muss vor dem Einbau wissen, was es kostet und ob eine Eintragung nötig ist.</div>`},
+{id:"antenne",name:"Fahrzeugantennen",html:`
+<ul>
+<li><b>Funktion:</b> Die Antenne wandelt elektromagnetische Wellen in eine elektrische Spannung um (Empfang). Die Karosserie dient als Masse/Gegengewicht.</li>
+<li><b>Wellenlänge:</b> <span class="mono">λ = c / f</span>, c = 300 000 km/s. Optimale Stablänge ist <b>λ/4</b>. UKW 100 MHz → λ = 3 m → λ/4 ≈ 75 cm.</li>
+<li><b>Stabantenne:</b> passiv, λ/4-Länge, guter Empfang, anfällig für Waschanlage und Vandalismus.</li>
+<li><b>Kurzstabantenne:</b> elektrisch verlängert durch eine <b>Verlängerungsspule</b> im Fuß, oft mit Verstärker.</li>
+<li><b>Scheibenantenne:</b> Leiterbahnen in der Heckscheibe (oft mit Heizfeld kombiniert). Immer <b>aktiv</b> mit Antennenverstärker, geschützt und unsichtbar.</li>
+<li><b>Dachantenne („Haifischflosse“):</b> Multiband-Antenne für Radio, DAB+, GPS, Mobilfunk (LTE/5G). Aktiv, aerodynamisch.</li>
+<li><b>Aktive Antenne:</b> enthält einen Verstärker. Versorgung meist per <b>Phantomspeisung</b> (Gleichspannung über den Innenleiter des Koaxkabels) oder eigene Plusleitung.</li>
+<li><b>Diversity:</b> mehrere Antennen, das Radio wählt die mit dem besten Signal. Weniger Empfangsaussetzer.</li>
+<li><b>Frequenzbereiche:</b> UKW/FM 87,5–108 MHz · DAB+ Band III 174–240 MHz · GPS ca. 1575 MHz.</li>
+<li><b>DAB+-Nachrüstung:</b> eigene DAB-Antenne (Scheibenklebe- oder Dachantenne) oder Splitter an vorhandener Antenne. Massepunkt muss sauber und blank sein.</li>
+</ul>
+<div class="merk">Hohe Frequenz → kurze Wellenlänge → kurze Antenne. Scheiben- und Kurzantennen brauchen einen Verstärker.</div>`},
+{id:"sound",name:"Soundsysteme: Lautsprecher, Verstärker, Weichen",html:`
+<ul>
+<li><b>Elektrodynamischer Lautsprecher:</b> Wechselstrom in der <b>Schwingspule</b> erzeugt ein Magnetfeld. Zusammen mit dem Dauermagneten entsteht eine Kraft, die Spule und <b>Membran</b> bewegt. Weitere Teile: Sicke, Zentrierspinne, Korb.</li>
+<li><b>Lautsprecherarten:</b> Subwoofer (ca. 20–100 Hz), Tieftöner/Woofer, Mitteltöner, Hochtöner/Tweeter (ab ca. 3–5 kHz).</li>
+<li><b>Koaxialsystem:</b> Hochtöner sitzt im Tieftöner, einfacher Einbau. <b>Kompaktsystem/Komponentensystem:</b> Hoch- und Tieftöner getrennt mit externer Weiche, bessere Klangbühne.</li>
+<li><b>Verstärker (Endstufe):</b> verstärkt das Signal vom Radio. Angaben in <b>Watt RMS</b> (Dauerleistung) zählen, nicht „Max“ oder PMPO.</li>
+<li><b>Verstärkerklassen:</b> Klasse A (sehr sauber, η ≈ 25 %), Klasse AB (Standard, η ≈ 50–70 %), Klasse D (Schaltverstärker, η > 80–90 %, wenig Wärme, ideal für Subwoofer).</li>
+<li><b>Frequenzweiche:</b> teilt das Signal nach Frequenzen auf die Lautsprecher auf.
+  <br>– <b>Tiefpass:</b> Spule in Reihe (lässt Tiefen durch) → Tieftöner.
+  <br>– <b>Hochpass:</b> Kondensator in Reihe (lässt Höhen durch) → Hochtöner. Schützt den Hochtöner vor Bass.
+  <br>– <b>Bandpass:</b> Kombination → Mitteltöner.</li>
+<li><b>Flankensteilheit:</b> je Ordnung 6 dB/Oktave (1. Ordnung 6 dB, 2. Ordnung 12 dB, …). <b>Trennfrequenz</b> = Frequenz, bei der getrennt wird.</li>
+<li><b>Passive Weiche:</b> nach dem Verstärker im Lautsprecherkreis. <b>Aktive Weiche</b> (oder DSP): vor dem Verstärker, jeder Weg bekommt eigenen Verstärkerkanal.</li>
+</ul>
+<div class="merk">Spule = Tiefpass, Kondensator = Hochpass (in Reihe zum Lautsprecher).</div>`},
+{id:"konzepte",name:"Anschlussmöglichkeiten & Nachrüstkonzepte",html:`
+<ul>
+<li><b>Stufe 1 – Lautsprechertausch:</b> bessere Lautsprecher an vorhandenem Radio. Günstig, Einbauadapter/Ringe nötig, Impedanz beachten.</li>
+<li><b>Stufe 2 – Radiotausch:</b> neues Radio (1-DIN/2-DIN) mit Einbaurahmen, ISO-Adapter, Antennenadapter, Lenkradfernbedienungs-Interface, CAN-Bus-Interface (Zündplus, Beleuchtung, Geschwindigkeit).</li>
+<li><b>Stufe 3 – Endstufe/Subwoofer nachrüsten:</b> zusätzlicher Verstärker, eigene Stromversorgung direkt von der Batterie mit Sicherung.</li>
+<li><b>Anschluss der Endstufe:</b>
+  <br>– <b>Low-Level (Cinch/RCA):</b> Vorverstärkerausgang vom Radio, geringer Pegel, wenig Störungen. Beste Qualität.
+  <br>– <b>High-Level (Lautsprecherpegel):</b> Endstufe wird an Lautsprecherausgänge des Originalradios angeschlossen. Nötig, wenn das Werksradio keine Cinch-Ausgänge hat. Alternativ <b>High-Low-Adapter</b>.</li>
+<li><b>Remote-Leitung:</b> schaltet die Endstufe mit dem Radio ein (ca. 12 V). Ohne Remote läuft die Endstufe dauerhaft → Batterie leer.</li>
+<li><b>DSP-Verstärker:</b> digitale Klangbearbeitung (EQ, Laufzeitkorrektur, Weichen). Ideal, wenn das Werksradio bleiben soll (Plug &amp; Play-Kabelbaum).</li>
+<li><b>Aktiv-Subwoofer:</b> Subwoofer mit eingebautem Verstärker, platzsparend (z.&nbsp;B. unter dem Sitz).</li>
+</ul>
+<div class="merk">Werksradio bleibt + keine Cinch-Ausgänge → High-Level-Eingang oder DSP. Remote-Leitung nie vergessen.</div>`},
+{id:"klang",name:"Klangqualität, Signal-Rausch-Abstand, Klangeinstellungen",html:`
+<ul>
+<li><b>Hörbereich</b> des Menschen: ca. 20 Hz bis 20 kHz.</li>
+<li><b>Signal-Rausch-Abstand (SNR, S/N):</b> Verhältnis von Nutzsignal zu Störsignal (Rauschen). Je <b>größer</b> der Wert in dB, desto besser. Gute Geräte: über 90 dB.</li>
+<li><b>Formeln:</b> Spannung: <span class="mono">SNR = 20 · log(U_S / U_R)</span> · Leistung: <span class="mono">SNR = 10 · log(P_S / P_R)</span>.</li>
+<li><b>dB-Faustregeln:</b> +3 dB = doppelte Leistung · +6 dB = doppelte Spannung · +10 dB ≈ doppelt so laut empfunden.</li>
+<li><b>Klirrfaktor (THD):</b> Anteil der Verzerrungen in %. Je <b>kleiner</b>, desto besser.</li>
+<li><b>Frequenzgang:</b> wie gleichmäßig Frequenzen wiedergegeben werden (z.&nbsp;B. 20 Hz – 20 kHz ±3 dB).</li>
+<li><b>Störquellen im Kfz:</b> Lichtmaschine (Pfeifen drehzahlabhängig), Zündung, Masseschleifen. Abhilfe: sauberer zentraler Massepunkt, Cinch- und Stromkabel auf getrennten Fahrzeugseiten verlegen, Entstörfilter.</li>
+<li><b>Klangeinstellungen:</b> Bass, Mitten, Höhen · Equalizer (einzelne Frequenzbänder) · <b>Balance</b> (links/rechts) · <b>Fader</b> (vorne/hinten) · Loudness (hebt bei leiser Lautstärke Bass/Höhen an) · <b>Laufzeitkorrektur</b> (Schall aller Lautsprecher kommt gleichzeitig am Fahrerohr an).</li>
+</ul>
+<div class="merk">SNR groß = gut. Klirrfaktor klein = gut. Stromkabel und Signalkabel getrennt verlegen.</div>`},
+{id:"grundlagen",name:"Elektrische Grundlagen: Impedanz, Leistung, Wirkungsgrad, Strom",html:`
+<ul>
+<li><b>Impedanz Z</b> (in Ω): Wechselstromwiderstand eines Lautsprechers. Sie ändert sich mit der Frequenz, angegeben wird die Nennimpedanz. Im Kfz meist <b>4 Ω</b>, Subwoofer auch 2 Ω.</li>
+<li><b>Reihenschaltung:</b> <span class="mono">Z = Z1 + Z2</span> (2 × 4 Ω = 8 Ω). <b>Parallelschaltung</b> gleicher Lautsprecher: <span class="mono">Z = Z1 / n</span> (2 × 4 Ω = 2 Ω).</li>
+<li><b>Achtung:</b> Impedanz zu klein für den Verstärker → zu hoher Strom → Verstärker überhitzt oder schaltet ab. Mindestimpedanz laut Datenblatt einhalten.</li>
+<li><b>Leistung:</b> <span class="mono">P = U · I = I² · R = U² / R</span>. Bei kleinerer Impedanz gibt ein Verstärker mehr Leistung ab.</li>
+<li><b>Wirkungsgrad η:</b> <span class="mono">η = P_ab / P_zu</span> (immer &lt; 1 bzw. &lt; 100 %). Der Rest wird zu Wärme.</li>
+<li><b>Stromstärke</b> aus Leistung: <span class="mono">I = P / U</span>. Bei Verstärkern zuerst die aufgenommene Leistung berechnen: <span class="mono">P_zu = P_ab / η</span>.</li>
+<li><b>Bordspannung:</b> Batterie ca. 12,6 V, bei laufendem Motor ca. 13,8–14,4 V.</li>
+</ul>
+<div class="merk">Stromaufnahme Endstufe: I = P_ab / (η · U). Ohne η wird der Strom zu klein berechnet.</div>`},
+{id:"rechnen",name:"Berechnungen, Einheiten, Leitungen & Sicherungen",html:`
+<ul>
+<li><b>Vorsätze:</b> m (milli) = 10⁻³ · k (kilo) = 10³ · M (Mega) = 10⁶ · µ (mikro) = 10⁻⁶. Beispiele: 250 mA = 0,25 A · 1,2 kW = 1200 W · 100 MHz = 100 000 000 Hz.</li>
+<li><b>Leiterwiderstand:</b> <span class="mono">R = ρ · l / A = l / (κ · A)</span>. Kupfer: ρ = 0,0178 Ω·mm²/m, κ = 56 m/(Ω·mm²).</li>
+<li><b>Querschnitt aus Spannungsfall:</b> <span class="mono">A = I · l / (κ · ΔU)</span>. Rückleitung über Masse (Karosserie) → nur Plusleitung zählt. Mit Hin- und Rückleitung: <span class="mono">A = 2 · l · I / (κ · ΔU)</span>.</li>
+<li><b>Danach</b> immer den <b>nächstgrößeren Normquerschnitt</b> wählen und die Strombelastbarkeit prüfen.</li>
+<li><b>Sicherung:</b> schützt die <b>Leitung</b> (Brandschutz). Nennstrom ≥ Betriebsstrom, aber ≤ Belastbarkeit der Leitung. Nächsthöheren Normwert wählen.</li>
+<li><b>Einbauort:</b> Hauptsicherung so nah wie möglich an der Batterie (Faustregel: max. ca. 30 cm), damit die ganze Leitung geschützt ist.</li>
+<li><b>Sicherungsarten:</b> Flachsicherung (Mini, Standard, Maxi) für kleine Ströme, ANL/AMI/Mega-Sicherung für Soundsystem-Hauptleitungen.</li>
+</ul>
+<div class="merk">Rechenweg: Strom berechnen → Querschnitt berechnen → nächster Normquerschnitt → passende Sicherung.</div>`},
+{id:"sicherheit",name:"Elektrische & mechanische Sicherheit",html:`
+<ul>
+<li><b>Vor Arbeiten am Bordnetz:</b> Zündung aus, Minuspol der Batterie abklemmen (zuerst Minus ab, zuletzt Minus an). Radiocode, Fensterheber-Anlernen und Herstellervorgaben beachten.</li>
+<li><b>Airbag:</b> Wartezeit nach Abklemmen beachten, keine Leitungen im Entfaltungsbereich, keine Messung an Airbagleitungen.</li>
+<li><b>Leitungsverlegung:</b> nicht über scharfe Kanten, durch Bleche nur mit <b>Gummitülle</b>, mit Kabelbindern fixieren, Abstand zu heißen und beweglichen Teilen (Auspuff, Pedale, Sitzschienen), Wellrohr/Gewebeband als Scheuerschutz.</li>
+<li><b>Verbindungen:</b> Quetsch- oder Lötverbindungen mit Schrumpfschlauch, keine „Stromdiebe“ an sicherheitsrelevanten Leitungen. Massepunkt blank schleifen und danach gegen Korrosion schützen.</li>
+<li><b>Bohren:</b> vorher prüfen, was dahinter liegt (Leitungen, Kraftstoff-/Bremsleitungen). Späne entfernen, Bohrlöcher entgraten und mit Rostschutz versiegeln.</li>
+<li><b>Mechanisch:</b> Endstufe, Subwoofer, Zusatzbatterie <b>crashsicher</b> befestigen (bei einem Unfall werden lose Teile zu Geschossen). Kühlung der Endstufe frei halten.</li>
+<li><b>Abschluss:</b> Funktionsprüfung aller Verbraucher, Fehlerspeicher auslesen und löschen, Ruhestrom messen.</li>
+</ul>
+<div class="merk">Minus zuerst ab, Minus zuletzt an. Jede Plusleitung von der Batterie wird direkt am Anfang abgesichert.</div>`},
+{id:"batterie",name:"Zusatzbatterien & Trennrelais",html:`
+<ul>
+<li><b>Zweck der Zusatzbatterie:</b> versorgt Verbraucher im Stand (Kühlbox, Standheizung, Wohnmobil, Soundanlage), ohne die Starterbatterie zu entladen. Motor springt immer an.</li>
+<li><b>Trennrelais:</b> verbindet beide Batterien nur, wenn der Motor läuft bzw. die Lichtmaschine lädt. Bei Motor aus trennt es → Starterbatterie bleibt geschützt.</li>
+<li><b>Ansteuerung:</b> über D+ / Klemme 61 (Ladekontrolle), Zündplus (Kl. 15) oder <b>spannungsgesteuert</b> (schaltet z.&nbsp;B. ab ca. 13,3 V zu, unter ca. 12,8 V ab).</li>
+<li><b>Ladebooster (DC-DC-Wandler):</b> nötig bei modernen Fahrzeugen mit intelligenter Lichtmaschine/Rekuperation, weil dort die Ladespannung oft zu niedrig ist. Lädt die Zusatzbatterie mit optimaler Kennlinie.</li>
+<li><b>Batterietyp:</b> AGM oder Gel im Innenraum (auslaufsicher, wartungsfrei). Nassbatterie im Innenraum nur mit Entgasung nach außen (Knallgas!).</li>
+<li><b>Absicherung:</b> Verbindungsleitung an <b>beiden</b> Batterien absichern, weil Strom aus beiden Richtungen fließen kann.</li>
+<li><b>Kapazität:</b> <span class="mono">C = I · t</span> (Ah). Nutzbar ist nicht die volle Kapazität (Blei: ca. 50 % Entladetiefe für lange Lebensdauer).</li>
+<li><b>Pufferkondensator (Powercap):</b> bei Soundanlagen, gleicht kurze Stromspitzen aus (Licht flackert nicht).</li>
+</ul>
+<div class="merk">Motor an → Relais zu → beide Batterien laden. Motor aus → Relais auf → Starterbatterie getrennt.</div>`},
+{id:"ahk",name:"Anhängerkupplungen: Stützlast & Steckverbindungen",html:`
+<ul>
+<li><b>Stützlast:</b> senkrechte Kraft, mit der die Anhängerdeichsel auf den Kugelkopf drückt (in kg). Angaben: Fahrzeugschein/Typschild der AHK und Typschild des Anhängers.</li>
+<li><b>Regeln:</b> Der <b>kleinere</b> der beiden zulässigen Werte (Fahrzeug oder Anhänger) gilt. Mindestens <b>4 % des tatsächlichen Anhängergewichts</b>, aber nicht unter 25 kg. Stützlast möglichst voll ausnutzen → stabileres Fahrverhalten.</li>
+<li><b>Messen:</b> mit Stützlastwaage, Deichsel waagerecht. Schwere Ladung über die Achse, eher leicht nach vorne.</li>
+<li><b>Zu wenig Stützlast:</b> Anhänger kann pendeln und aufschaukeln. <b>Zu viel:</b> Hinterachse überlastet, Vorderachse entlastet → schlechtere Lenkung und Bremse.</li>
+<li><b>Bauformen:</b> starr (angeschraubt), abnehmbar (vertikal/horizontal), schwenkbar (elektrisch oder manuell).</li>
+<li><b>Zulassung:</b> AHK mit EG-Typgenehmigung braucht keine Eintragung, wenn das Fahrzeug für Anhängelast freigegeben ist. Bescheinigung mitführen.</li>
+<li><b>Elektrosatz (E-Satz):</b> <b>fahrzeugspezifisch</b> (Anhängersteuergerät, CAN-Bus, Codierung: Blinkerkontrolle, PDC-Abschaltung, Anhängerstabilisierung im ESP) oder <b>universal</b> (einfacher, Funktionen fehlen).</li>
+<li><b>Steckdosen:</b> 7-polig (ISO 1724) für Licht · 13-polig (ISO 11446) zusätzlich Rückfahrlicht, Dauerplus, Ladeleitung (Wohnwagen). Adapter 13 → 7 möglich.</li>
+</ul>
+<div class="tablebox"><table class="pins">
+<thead><tr><th>Pin</th><th>13-polig</th><th>7-polig</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Blinker links (L)</td><td>Blinker links (L)</td></tr>
+<tr><td>2</td><td>Nebelschlussleuchte (54G)</td><td>Nebelschlussleuchte (54G)</td></tr>
+<tr><td>3</td><td>Masse für 1–8 (31)</td><td>Masse (31)</td></tr>
+<tr><td>4</td><td>Blinker rechts (R)</td><td>Blinker rechts (R)</td></tr>
+<tr><td>5</td><td>Schlusslicht rechts (58R)</td><td>Schlusslicht rechts (58R)</td></tr>
+<tr><td>6</td><td>Bremslicht (54)</td><td>Bremslicht (54)</td></tr>
+<tr><td>7</td><td>Schlusslicht links (58L)</td><td>Schlusslicht links (58L)</td></tr>
+<tr><td>8</td><td>Rückfahrlicht</td><td>–</td></tr>
+<tr><td>9</td><td>Dauerplus (30)</td><td>–</td></tr>
+<tr><td>10</td><td>Ladeleitung (über Zündung)</td><td>–</td></tr>
+<tr><td>11</td><td>Masse für 10</td><td>–</td></tr>
+<tr><td>12</td><td>Anhängererkennung / frei</td><td>–</td></tr>
+<tr><td>13</td><td>Masse für 9</td><td>–</td></tr>
+</tbody></table></div>
+<div class="merk">Stützlast: kleinster zulässiger Wert gilt, mindestens 4 % vom Anhängergewicht, mindestens 25 kg.</div>`}
+];
+
+const learned=new Set(store.get("learned",[]));
+function updateProgress(){
+  const n=TOPICS.filter(t=>learned.has(t.id)).length;
+  $("#pbar").style.width=(n/TOPICS.length*100)+"%";
+  $("#ptext").textContent=n+" / "+TOPICS.length+" Themen";
+}
+function renderTopics(){
+  const box=$("#topics");box.innerHTML="";
+  TOPICS.forEach((t,i)=>{
+    const d=document.createElement("details");d.className="topic"+(learned.has(t.id)?" done":"");
+    d.innerHTML=`<summary><span class="tnum">${String(i+1).padStart(2,"0")}</span><span class="tname">${esc(t.name)}</span><span class="tstate">${learned.has(t.id)?"gelernt":"offen"}</span></summary>
+      <div class="tbody">${t.html}<div class="tactions">
+        <button type="button" data-act="learn">${learned.has(t.id)?"Als offen markieren":"Als gelernt markieren"}</button>
+        <button type="button" class="primary" data-act="quiz">Quiz zu diesem Thema</button></div></div>`;
+    d.querySelector('[data-act="learn"]').onclick=()=>{
+      learned.has(t.id)?learned.delete(t.id):learned.add(t.id);store.set("learned",[...learned]);
+      const open=d.open;renderTopics();updateProgress();box.children[i].open=open;};
+    d.querySelector('[data-act="quiz"]').onclick=()=>{quizTopic=t.id;startQuiz();location.hash="quiz";};
+    box.appendChild(d);
+  });
+}
+
+/* ---------- Quiz ---------- */
+// q, a: Antworten (erste = richtig), e: Erklärung, t: Thema
+const Q=[
+{t:"handlung",q:"Welche Reihenfolge hat die vollständige Handlung?",a:["Informieren, Planen, Entscheiden, Ausführen, Kontrollieren, Bewerten","Planen, Informieren, Ausführen, Entscheiden, Bewerten, Kontrollieren","Informieren, Entscheiden, Planen, Ausführen, Bewerten, Kontrollieren","Entscheiden, Informieren, Planen, Ausführen, Kontrollieren, Bewerten"],e:"I-P-E-A-K-B: erst informieren und planen, dann entscheiden, ausführen, kontrollieren und zum Schluss den ganzen Ablauf bewerten."},
+{t:"handlung",q:"In welcher Phase wird der Soll-Ist-Vergleich des gesamten Auftrags gemacht und überlegt, was man beim nächsten Mal besser macht?",a:["Bewerten","Kontrollieren","Planen","Informieren"],e:"Bewerten = Reflexion des ganzen Ablaufs. Kontrollieren prüft dagegen das Arbeitsergebnis (Funktion, Messungen)."},
+{t:"handlung",q:"Welches Werkzeug eignet sich, um Arbeitspakete mit Dauer und Reihenfolge übersichtlich darzustellen?",a:["Balkenplan (Gantt-Diagramm)","Schaltplan","Stromlaufplan","Kostenvoranschlag"],e:"Ein Balkenplan zeigt jede Aufgabe als Balken über der Zeitachse, mit Abhängigkeiten und Meilensteinen."},
+{t:"kunde",q:"Welche Frage ist eine offene Frage?",a:["Wofür möchten Sie die Anlage hauptsächlich nutzen?","Möchten Sie einen Subwoofer?","Ist Ihr Budget unter 500 €?","Soll das Originalradio bleiben?"],e:"Offene Fragen beginnen mit einem W-Wort und lassen eine ausführliche Antwort zu. Sie eignen sich zur Bedarfsermittlung."},
+{t:"kunde",q:"Ein Nachrüstteil hat weder ABE noch EG-Typgenehmigung oder E-Prüfzeichen. Was ist nötig?",a:["Teilegutachten und Abnahme/Eintragung durch eine Prüforganisation","Nichts, wenn der Einbau fachgerecht ist","Nur eine Rechnung der Werkstatt","Eine Codierung im Steuergerät"],e:"Ohne Betriebserlaubnis des Teils kann die Betriebserlaubnis des Fahrzeugs erlöschen. Dann muss es begutachtet und eingetragen werden."},
+{t:"kunde",q:"Was gehört NICHT zu den technischen Anforderungen, die vor einer Nachrüstung geklärt werden?",a:["Lieblingsmusik des Kunden","Belastbarkeit des Bordnetzes","Einbauraum im Fahrzeug","Integration in den CAN-Bus"],e:"Bordnetz, Platz und Steuergeräte-Integration bestimmen, ob und wie nachgerüstet werden kann."},
+{t:"antenne",q:"Wie lang sollte eine λ/4-Stabantenne für 100 MHz ungefähr sein?",a:["75 cm","3 m","1,5 m","30 cm"],e:"λ = c/f = 300 000 000 m/s ÷ 100 000 000 Hz = 3 m. λ/4 = 0,75 m."},
+{t:"antenne",q:"Wozu dient die Spule im Fuß einer Kurzstabantenne?",a:["Sie verlängert die Antenne elektrisch","Sie filtert den Bass heraus","Sie versorgt den Verstärker mit Strom","Sie schützt vor Blitzschlag"],e:"Die Verlängerungsspule gleicht die zu kurze mechanische Länge aus, sodass die Antenne trotzdem auf die Frequenz abgestimmt ist."},
+{t:"antenne",q:"Was versteht man unter Phantomspeisung?",a:["Versorgung des Antennenverstärkers über den Innenleiter des Antennenkabels","Eine Antenne ohne Verstärker","Stromversorgung des Radios über Klemme 30","Empfang über zwei Antennen"],e:"Das Radio legt eine Gleichspannung auf das Koaxkabel. Der Verstärker in der Antenne wird darüber versorgt, eine extra Leitung ist nicht nötig."},
+{t:"antenne",q:"Welcher Vorteil hat ein Antennen-Diversity-System?",a:["Weniger Empfangsaussetzer, weil die jeweils beste Antenne genutzt wird","Höhere Lautstärke","Kein Antennenverstärker nötig","Nur eine Frequenz wird empfangen"],e:"Bei Diversity wertet das Radio mehrere Antennen aus und schaltet auf das stärkste Signal."},
+{t:"antenne",q:"In welchem Frequenzbereich sendet DAB+ in Deutschland?",a:["Band III, ca. 174–240 MHz","87,5–108 MHz","ca. 1575 MHz","20 Hz–20 kHz"],e:"87,5–108 MHz ist UKW, 1575 MHz ist GPS, 20 Hz–20 kHz ist der Hörbereich."},
+{t:"sound",q:"Welches Bauteil in einer passiven Weiche lässt hohe Frequenzen zum Hochtöner durch?",a:["Kondensator in Reihe","Spule in Reihe","Widerstand parallel","Diode in Reihe"],e:"Der Blindwiderstand eines Kondensators sinkt mit steigender Frequenz → Hochpass. Die Spule wirkt umgekehrt als Tiefpass."},
+{t:"sound",q:"Welche Flankensteilheit hat eine Frequenzweiche 2. Ordnung?",a:["12 dB/Oktave","6 dB/Oktave","18 dB/Oktave","24 dB/Oktave"],e:"Pro Ordnung 6 dB/Oktave: 1. Ordnung 6, 2. Ordnung 12, 3. Ordnung 18, 4. Ordnung 24 dB/Oktave."},
+{t:"sound",q:"Welche Verstärkerklasse hat den höchsten Wirkungsgrad?",a:["Klasse D","Klasse A","Klasse AB","Klasse B ohne Gegentakt"],e:"Klasse D arbeitet als Schaltverstärker und erreicht über 80–90 %. Deshalb wird er kaum warm und eignet sich für Subwoofer."},
+{t:"sound",q:"Welches Teil eines Lautsprechers bewegt sich im Magnetfeld, wenn Strom fließt?",a:["Schwingspule","Korb","Magnet","Sicke"],e:"Die Schwingspule ist mit der Membran verbunden. Durch die Kraft im Magnetfeld bewegt sie die Membran."},
+{t:"sound",q:"Was ist ein Komponentensystem?",a:["Getrennter Hoch- und Tieftöner mit externer Frequenzweiche","Hochtöner sitzt direkt im Tieftöner","Subwoofer mit eingebautem Verstärker","Radio mit DSP"],e:"Beim Koaxialsystem sitzt der Hochtöner im Tieftöner. Beim Komponentensystem sind sie getrennt, der Hochtöner kann besser platziert werden."},
+{t:"konzepte",q:"Das Werksradio soll bleiben und hat keine Cinch-Ausgänge. Wie wird die Endstufe angeschlossen?",a:["Über den High-Level-Eingang (Lautsprecherpegel) oder einen High-Low-Adapter","Direkt an die Antenne","Über die Remote-Leitung","Über Klemme 15"],e:"Am High-Level-Eingang wird das Lautsprechersignal des Radios verwendet und in der Endstufe auf Cinch-Pegel umgesetzt."},
+{t:"konzepte",q:"Welche Aufgabe hat die Remote-Leitung einer Endstufe?",a:["Sie schaltet die Endstufe zusammen mit dem Radio ein und aus","Sie überträgt das Musiksignal","Sie ist die Masseleitung","Sie versorgt die Endstufe mit dem Hauptstrom"],e:"Ohne Remote-Signal bleibt die Endstufe aus. Wird sie dauerhaft auf Plus gelegt, entlädt sie die Batterie."},
+{t:"konzepte",q:"Was braucht man beim Tausch des Werksradios gegen ein Nachrüstradio häufig zusätzlich?",a:["CAN-Bus-Interface, Einbaurahmen und Lenkradfernbedienungs-Adapter","Eine Zusatzbatterie","Eine 13-polige Steckdose","Einen Pufferkondensator"],e:"Moderne Fahrzeuge liefern Zündplus, Beleuchtung und Geschwindigkeit über den CAN-Bus. Das Interface übersetzt diese Signale für das neue Radio."},
+{t:"klang",q:"Gerät A hat 85 dB SNR, Gerät B 100 dB. Welches ist besser?",a:["Gerät B, weil das Rauschen im Verhältnis kleiner ist","Gerät A, weil es leiser rauscht","Beide gleich","Das lässt sich nicht sagen"],e:"Je größer der Signal-Rausch-Abstand, desto weiter liegt das Nutzsignal über dem Rauschen."},
+{t:"klang",q:"Um wie viel dB steigt der Pegel, wenn die Leistung verdoppelt wird?",a:["um 3 dB","um 6 dB","um 10 dB","um 2 dB"],e:"10 · log(2) ≈ 3 dB. Doppelte Spannung ergibt 20 · log(2) ≈ 6 dB."},
+{t:"klang",q:"Was stellt man mit dem Fader ein?",a:["Lautstärkeverteilung vorne/hinten","Lautstärkeverteilung links/rechts","Die Bassanhebung bei kleiner Lautstärke","Die Laufzeit der Lautsprecher"],e:"Fader = vorne/hinten, Balance = links/rechts, Loudness = Anhebung bei leiser Wiedergabe."},
+{t:"klang",q:"Ein drehzahlabhängiges Pfeifen ist im Lautsprecher zu hören. Was ist eine typische Ursache?",a:["Störung der Lichtmaschine über Masseschleife oder schlecht verlegte Leitungen","Zu große Antenne","Falsche Fader-Einstellung","Hochtöner verpolt"],e:"Abhilfe: zentraler Massepunkt, Strom- und Cinchkabel getrennt verlegen, ggf. Entstörfilter."},
+{t:"grundlagen",q:"Zwei 4-Ω-Lautsprecher werden parallel geschaltet. Wie groß ist die Gesamtimpedanz?",a:["2 Ω","8 Ω","4 Ω","1 Ω"],e:"Gleiche Widerstände parallel: Z = Z1 / n = 4 Ω / 2 = 2 Ω."},
+{t:"grundlagen",q:"Was passiert, wenn die Impedanz am Verstärker kleiner ist als erlaubt?",a:["Der Strom wird zu groß, der Verstärker überhitzt oder schaltet ab","Der Verstärker wird leiser","Nichts, die Leistung bleibt gleich","Die Lautsprecher werden kälter"],e:"I = U/Z. Kleinere Impedanz → größerer Strom → Überlastung."},
+{t:"grundlagen",q:"Eine Endstufe gibt 400 W ab und nimmt 500 W auf. Wie groß ist der Wirkungsgrad?",a:["80 %","125 %","20 %","90 %"],e:"η = P_ab / P_zu = 400 W / 500 W = 0,8 = 80 %."},
+{t:"grundlagen",q:"Welche Leistungsangabe ist für den Vergleich von Verstärkern aussagekräftig?",a:["Watt RMS (Dauerleistung)","PMPO","Maximalleistung","Spitzenleistung"],e:"RMS ist die Dauerleistung, die der Verstärker sauber abgeben kann. PMPO-Werte sind nicht genormt und stark übertrieben."},
+{t:"rechnen",q:"Wie viel sind 1500 mA?",a:["1,5 A","15 A","0,15 A","150 A"],e:"milli = 1/1000 → 1500 mA ÷ 1000 = 1,5 A."},
+{t:"rechnen",q:"Was schützt eine Sicherung in erster Linie?",a:["Die Leitung vor Überhitzung und Brand","Den Lautsprecher vor Verzerrung","Die Batterie vor Tiefentladung","Das Radio vor Diebstahl"],e:"Die Sicherung wird nach der Leitung ausgelegt: Nennstrom über dem Betriebsstrom, aber unter der Belastbarkeit der Leitung."},
+{t:"rechnen",q:"Wo muss die Hauptsicherung einer Endstufen-Plusleitung sitzen?",a:["So nah wie möglich an der Batterie","Direkt an der Endstufe","In der Mitte der Leitung","Im Sicherungskasten des Innenraums"],e:"Nur so ist die gesamte Leitung geschützt. Bei einem Kurzschluss zwischen Batterie und Sicherung wäre die Leitung sonst ungeschützt."},
+{t:"rechnen",q:"Der berechnete Querschnitt beträgt 7,3 mm². Welcher Normquerschnitt wird gewählt?",a:["10 mm²","6 mm²","7,5 mm²","16 mm²"],e:"Immer den nächstgrößeren Normquerschnitt wählen: … 4 · 6 · 10 · 16 … mm²."},
+{t:"sicherheit",q:"Welcher Batteriepol wird bei Arbeiten am Bordnetz zuerst abgeklemmt?",a:["Minuspol","Pluspol","Egal","Beide gleichzeitig"],e:"Rutscht das Werkzeug am Minuspol an die Karosserie ab, passiert nichts, weil die Karosserie auch Masse ist. Am Pluspol gäbe es einen Kurzschluss."},
+{t:"sicherheit",q:"Wie wird eine Leitung durch ein Blech geführt?",a:["Durch ein entgratetes Loch mit Gummitülle","Direkt durch das Bohrloch","Mit Isolierband umwickelt durchs Loch","Durch einen Spalt der Tür"],e:"Die Tülle schützt die Isolierung vor dem Durchscheuern und dichtet ab."},
+{t:"sicherheit",q:"Warum muss ein Subwoofer im Kofferraum fest verschraubt sein?",a:["Bei einem Unfall würde er sonst durch das Fahrzeug geschleudert","Damit er lauter klingt","Damit die Garantie gilt","Wegen der Frequenzweiche"],e:"Lose Teile werden bei einer Vollbremsung oder einem Aufprall zu gefährlichen Geschossen."},
+{t:"batterie",q:"Wann verbindet ein Trennrelais Starter- und Zusatzbatterie?",a:["Wenn der Motor läuft bzw. die Lichtmaschine lädt","Immer","Nur wenn der Motor aus ist","Wenn die Zusatzbatterie leer ist"],e:"Bei laufendem Motor werden beide geladen. Bei stehendem Motor ist die Starterbatterie getrennt und bleibt voll."},
+{t:"batterie",q:"Warum braucht man bei modernen Fahrzeugen oft einen Ladebooster statt eines einfachen Trennrelais?",a:["Intelligente Lichtmaschinen liefern zeitweise zu wenig Ladespannung","Trennrelais sind verboten","Ladebooster sind billiger","Damit die Zusatzbatterie entladen wird"],e:"Durch Rekuperation und Ladestrategie sinkt die Spannung oft unter 13 V. Der DC-DC-Wandler hebt sie auf die richtige Ladespannung."},
+{t:"batterie",q:"Welche Batterie eignet sich am besten für den Einbau im Innenraum?",a:["AGM- oder Gel-Batterie","Offene Nassbatterie ohne Entgasung","Starterbatterie mit Stopfen","Jede Batterie"],e:"AGM und Gel sind auslaufsicher und gasen im Normalbetrieb kaum aus. Nassbatterien entwickeln Knallgas."},
+{t:"batterie",q:"Warum wird die Verbindungsleitung zwischen beiden Batterien an beiden Enden abgesichert?",a:["Weil der Strom aus beiden Richtungen fließen kann","Weil es schöner aussieht","Damit das Relais schneller schaltet","Weil die Leitung zu kurz ist"],e:"Bei einem Kurzschluss speist jede Batterie den Fehler. Deshalb braucht jede Seite eine eigene Sicherung."},
+{t:"ahk",q:"Zulässige Stützlast: Fahrzeug 75 kg, Anhänger 50 kg. Welche Stützlast darf maximal gefahren werden?",a:["50 kg","75 kg","125 kg","62,5 kg"],e:"Es gilt immer der kleinere zulässige Wert."},
+{t:"ahk",q:"Wie hoch muss die Stützlast mindestens sein?",a:["4 % des tatsächlichen Anhängergewichts, mindestens 25 kg","10 % des Anhängergewichts","Genau 50 kg","Es gibt keine Mindestgrenze"],e:"Zu wenig Stützlast macht das Gespann instabil, der Anhänger kann pendeln."},
+{t:"ahk",q:"Welche Funktion hat Pin 9 der 13-poligen Steckdose?",a:["Dauerplus (Klemme 30)","Rückfahrlicht","Bremslicht","Blinker links"],e:"Pin 9 = Dauerplus, Pin 10 = Ladeleitung, Pin 8 = Rückfahrlicht, Pin 6 = Bremslicht, Pin 1 = Blinker links."},
+{t:"ahk",q:"Was kann ein fahrzeugspezifischer E-Satz, was ein universeller meist nicht kann?",a:["PDC-Abschaltung, Anhängerstabilisierung im ESP und Blinkerüberwachung über CAN-Bus","Bremslicht ansteuern","Blinker ansteuern","Schlusslicht ansteuern"],e:"Licht und Blinker kann jeder E-Satz. Komfort- und Sicherheitsfunktionen brauchen das Anhängersteuergerät und eine Codierung."},
+{t:"ahk",q:"Was passiert bei zu hoher Stützlast?",a:["Hinterachse überlastet, Vorderachse entlastet → schlechtere Lenkung und Bremswirkung","Anhänger pendelt stärker","Nichts","Der Anhänger hebt vorne ab"],e:"Zu viel Last auf dem Kugelkopf drückt das Heck herunter und nimmt der Vorderachse Gewicht."}
+];
+let quizTopic="alle", quiz=null;
+const LETTERS=["A","B","C","D"];
+function startQuiz(){
+  const pool=quizTopic==="alle"?Q:Q.filter(x=>x.t===quizTopic);
+  const n=quizTopic==="alle"?Math.min(15,pool.length):pool.length;
+  quiz={items:shuffle(pool).slice(0,n).map(x=>({...x,opts:shuffle(x.a.map((s,i)=>({s,ok:i===0})))})),i:0,answers:[]};
+  renderQuiz();
+}
+function topicSelect(){
+  return `<div class="row"><label class="lbl" for="qtopic">Thema</label><select id="qtopic">
+  <option value="alle">Alle Themen gemischt (15 Fragen)</option>
+  ${TOPICS.map(t=>`<option value="${t.id}"${quizTopic===t.id?" selected":""}>${esc(t.name)}</option>`).join("")}</select></div>`;
+}
+function bindTopicSelect(){const s=$("#qtopic");if(!s)return;s.value=quizTopic;s.onchange=()=>{quizTopic=s.value;startQuiz();}}
+function renderQuiz(){
+  const box=$("#quiz");
+  if(!quiz)startQuiz();
+  const {items,i}=quiz;
+  if(i>=items.length){
+    const right=quiz.answers.filter(Boolean).length,pct=Math.round(right/items.length*100);
+    const key="best:"+quizTopic,best=Math.max(store.get(key,0),pct);store.set(key,best);
+    const note=pct>=90?"Sehr gut, das sitzt.":pct>=70?"Gut. Die falschen Fragen unten noch einmal ansehen.":pct>=50?"Ausreichend. Die Themen der falschen Fragen noch einmal lesen.":"Noch nicht sicher. Erst die Themen lesen, dann neu starten.";
+    box.innerHTML=topicSelect()+`<div class="card" style="margin-top:14px">
+      <div class="qmeta"><span>Ergebnis</span><span>Bestwert ${best} %</span></div>
+      <div class="row" style="gap:16px;align-items:baseline"><span class="score">${right}/${items.length}</span><span>${pct} % · ${note}</span></div>
+      <ul class="review">${items.map((q,k)=>`<li class="${quiz.answers[k]?"r":"f"}"><span class="m">${quiz.answers[k]?"✓":"✗"}</span><span>${esc(q.q)}${quiz.answers[k]?"":`<br><span style="color:var(--muted)">Richtig: ${esc(q.a[0])}</span>`}</span></li>`).join("")}</ul>
+      <div class="row end"><button type="button" class="primary" id="qrestart">Neue Runde</button></div></div>`;
+    bindTopicSelect();$("#qrestart").onclick=startQuiz;return;
+  }
+  const q=items[i],tname=TOPICS.find(t=>t.id===q.t).name;
+  box.innerHTML=topicSelect()+`<div class="card" style="margin-top:14px">
+    <div class="qmeta"><span>Frage ${i+1} von ${items.length}</span><span>${esc(tname)}</span></div>
+    <div class="bar"><i style="width:${i/items.length*100}%"></i></div>
+    <div class="qtext">${esc(q.q)}</div>
+    <div class="opts">${q.opts.map((o,k)=>`<button type="button" class="opt" data-k="${k}"><span class="k">${LETTERS[k]}</span><span>${esc(o.s)}</span></button>`).join("")}</div>
+    <div id="qexp"></div></div>`;
+  bindTopicSelect();
+  box.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    if(quiz.answers.length>i)return;
+    const k=+b.dataset.k,ok=q.opts[k].ok;quiz.answers.push(ok);
+    box.querySelectorAll(".opt").forEach((x,j)=>{x.disabled=true;if(q.opts[j].ok)x.classList.add("right");else if(j===k)x.classList.add("wrong");});
+    $("#qexp").innerHTML=`<div class="explain ${ok?"ok":"no"}"><strong>${ok?"Richtig":"Leider falsch"}</strong>${esc(q.e)}</div>
+      <div class="row end" style="margin-top:12px"><button type="button" class="primary" id="qnext">${i+1<items.length?"Nächste Frage":"Auswertung"}</button></div>`;
+    const nb=$("#qnext");nb.onclick=()=>{quiz.i++;renderQuiz();};nb.focus();
+  });
+}
+
+/* ---------- Rechentrainer ---------- */
+const NORM_A=[0.5,0.75,1,1.5,2.5,4,6,10,16,25,35,50,70,95];
+const NORM_F=[5,7.5,10,15,20,25,30,40,50,60,80,100,125,150,200,250];
+const nextUp=(arr,x)=>arr.find(v=>v>=x-1e-9)??arr[arr.length-1];
+const CALC={
+ strom:{name:"Stromaufnahme Endstufe",gen(){
+   const P=pick([200,300,400,500,600,800,1000]),eta=pick([0.5,0.6,0.7,0.8,0.85,0.9]),U=pick([12,13.8,14]);
+   const Pz=P/eta,I=Pz/U;
+   return{text:`Eine Endstufe liefert ${P} W RMS an die Lautsprecher. Ihr Wirkungsgrad beträgt ${de(eta*100,0)} %. Wie groß ist die Stromaufnahme aus dem Bordnetz?`,
+     given:[["P_ab",P+" W"],["η",de(eta*100,0)+" %"],["U",de(U,1)+" V"]],unit:"A",ans:I,tol:0.02,
+     steps:`P_zu = P_ab / η = ${P} W / ${de(eta,2)} = ${de(Pz,1)} W\nI = P_zu / U = ${de(Pz,1)} W / ${de(U,1)} V = ${de(I,2)} A`};}},
+ impedanz:{name:"Gesamtimpedanz Lautsprecher",gen(){
+   const Z=pick([2,4,8]),n=pick([2,2,3,4]),par=Math.random()<0.6,res=par?Z/n:Z*n;
+   return{text:`${n} Lautsprecher mit je ${Z} Ω werden ${par?"parallel":"in Reihe"} geschaltet. Wie groß ist die Gesamtimpedanz?`,
+     given:[["Z je Lautsprecher",Z+" Ω"],["Anzahl",String(n)],["Schaltung",par?"parallel":"Reihe"]],unit:"Ω",ans:res,tol:0.01,
+     steps:par?`Gleiche Widerstände parallel: Z = Z1 / n = ${Z} Ω / ${n} = ${de(res,2)} Ω`:`Reihe: Z = Z1 + Z2 + … = ${n} · ${Z} Ω = ${res} Ω`};}},
+ leistung:{name:"Leistung am Lautsprecher",gen(){
+   const U=pick([8,10,12,14,16,20,24]),R=pick([2,4,8]),P=U*U/R;
+   return{text:`Am Lautsprecherausgang wird eine Effektivspannung von ${U} V gemessen. Der Lautsprecher hat ${R} Ω. Welche Leistung nimmt er auf?`,
+     given:[["U",U+" V"],["Z",R+" Ω"]],unit:"W",ans:P,tol:0.01,
+     steps:`P = U² / Z = (${U} V)² / ${R} Ω = ${U*U} / ${R} = ${de(P,1)} W\nKontrolle: I = U / Z = ${de(U/R,2)} A → P = U · I = ${de(P,1)} W`};}},
+ querschnitt:{name:"Leitungsquerschnitt",gen(){
+   const I=pick([20,25,30,40,50,60,80]),l=pick([3,3.5,4,4.5,5,6]),dU=pick([0.3,0.4,0.5]),k=56,A=I*l/(k*dU);
+   return{text:`Die Plusleitung einer Endstufe ist ${de(l,1)} m lang (Rückleitung über die Karosserie). Es fließen ${I} A, der Spannungsfall darf höchstens ${de(dU,1)} V betragen. Kupfer: κ = 56 m/(Ω·mm²). Welcher Querschnitt ist rechnerisch nötig?`,
+     given:[["I",I+" A"],["l",de(l,1)+" m"],["ΔU",de(dU,1)+" V"],["κ","56 m/(Ω·mm²)"]],unit:"mm²",ans:A,tol:0.02,
+     steps:`A = I · l / (κ · ΔU)\nA = ${I} A · ${de(l,1)} m / (56 · ${de(dU,1)} V) = ${de(I*l,1)} / ${de(k*dU,1)} = ${de(A,2)} mm²\n→ gewählt: nächster Normquerschnitt ${de(nextUp(NORM_A,A),2)} mm²`};}},
+ sicherung:{name:"Sicherung auswählen",gen(){
+   const P=pick([60,90,120,180,250,350,500]),U=pick([12,14]),I=P/U,F=nextUp(NORM_F,I*1.0001);
+   return{text:`Ein Verbraucher mit ${P} W wird an ${U} V betrieben. Welche Sicherung (nächster Normwert über dem Betriebsstrom) wird eingesetzt?`,
+     given:[["P",P+" W"],["U",U+" V"],["Normwerte","5 · 7,5 · 10 · 15 · 20 · 25 · 30 · 40 · 50 · 60 · 80 · 100 · 125 …"]],unit:"A",ans:F,tol:0.001,
+     steps:`I = P / U = ${P} W / ${U} V = ${de(I,2)} A\n→ nächster Normwert darüber: ${de(F,1)} A\n(Leitung muss diesen Strom dauerhaft vertragen.)`};}},
+ antenne:{name:"λ/4-Antennenlänge",gen(){
+   const f=pick([88,90,95,98,100,104,107,180,200,225]),lam=300/f,q=lam/4*100;
+   return{text:`Wie lang muss eine λ/4-Antenne für ${f} MHz sein? Ergebnis in cm.`,
+     given:[["f",f+" MHz"],["c","300 000 000 m/s"]],unit:"cm",ans:q,tol:0.02,
+     steps:`λ = c / f = 300 000 000 m/s / ${f} 000 000 Hz = ${de(lam,3)} m\nλ/4 = ${de(lam,3)} m / 4 = ${de(lam/4,3)} m = ${de(q,1)} cm`};}},
+ batterie:{name:"Laufzeit Zusatzbatterie",gen(){
+   const C=pick([60,70,80,95,100,120]),I=pick([2,3,4,5,6,8]),use=pick([0.5,0.5,0.8]),t=C*use/I;
+   return{text:`Eine Kühlbox zieht ${I} A aus einer Zusatzbatterie mit ${C} Ah. Es sollen nur ${de(use*100,0)} % der Kapazität genutzt werden. Wie lange läuft die Kühlbox?`,
+     given:[["C",C+" Ah"],["I",I+" A"],["nutzbar",de(use*100,0)+" %"]],unit:"h",ans:t,tol:0.02,
+     steps:`C_nutz = ${C} Ah · ${de(use,1)} = ${de(C*use,1)} Ah\nt = C_nutz / I = ${de(C*use,1)} Ah / ${I} A = ${de(t,2)} h`};}},
+ stuetzlast:{name:"Mindest-Stützlast",gen(){
+   const m=pick([450,500,600,750,900,1100,1300,1500,1800]),s=Math.max(25,m*0.04);
+   return{text:`Ein beladener Anhänger wiegt ${m} kg. Wie groß muss die Stützlast mindestens sein?`,
+     given:[["Anhängergewicht",m+" kg"],["Regel","4 %, mind. 25 kg"]],unit:"kg",ans:s,tol:0.01,
+     steps:`4 % von ${m} kg = 0,04 · ${m} kg = ${de(m*0.04,1)} kg\n${m*0.04<25?"Das ist unter 25 kg → Mindestwert 25 kg gilt.":"Das ist über 25 kg → "+de(s,1)+" kg."}\nAußerdem: Der kleinere zulässige Wert von Fahrzeug und Anhänger darf nicht überschritten werden.`};}},
+ snr:{name:"Signal-Rausch-Abstand",gen(){
+   const volt=Math.random()<0.5,k=pick([2,3,4,5]),ratio=Math.pow(10,k),db=(volt?20:10)*k;
+   const S=volt?pick([1,2]):pick([10,50]),N=S/ratio;
+   return{text:volt?`Ein Radio liefert ein Nutzsignal von ${S} V, die Rauschspannung beträgt ${de(N*1000,4)} mV. Wie groß ist der Signal-Rausch-Abstand?`
+                   :`Ein Verstärker gibt ${S} W Nutzleistung ab, die Rauschleistung beträgt ${de(N*1000,4)} mW. Wie groß ist der Signal-Rausch-Abstand?`,
+     given:volt?[["U_S",S+" V"],["U_R",de(N*1000,4)+" mV"]]:[["P_S",S+" W"],["P_R",de(N*1000,4)+" mW"]],unit:"dB",ans:db,tol:0.01,
+     steps:volt?`Spannungsverhältnis: U_S / U_R = ${S} V / ${de(N,6)} V = ${ratio.toLocaleString("de-DE")}\nSNR = 20 · log(${ratio.toLocaleString("de-DE")}) = 20 · ${k} = ${db} dB`
+               :`Leistungsverhältnis: P_S / P_R = ${S} W / ${de(N,7)} W = ${ratio.toLocaleString("de-DE")}\nSNR = 10 · log(${ratio.toLocaleString("de-DE")}) = 10 · ${k} = ${db} dB`};}},
+ einheiten:{name:"Einheiten umrechnen",gen(){
+   const tasks=[
+     ()=>{const v=pick([250,500,750,1500,2200,80]);return{t:`${v} mA in A`,u:"A",a:v/1000,s:`${v} mA ÷ 1000 = ${de(v/1000,3)} A`}},
+     ()=>{const v=pick([0.5,1.2,2.5,3.6]);return{t:`${de(v,1)} kW in W`,u:"W",a:v*1000,s:`${de(v,1)} kW · 1000 = ${de(v*1000,0)} W`}},
+     ()=>{const v=pick([0.04,0.25,0.6,0.075]);return{t:`${de(v,3)} A in mA`,u:"mA",a:v*1000,s:`${de(v,3)} A · 1000 = ${de(v*1000,1)} mA`}},
+     ()=>{const v=pick([1500,4700,2200,330]);return{t:`${v} Ω in kΩ`,u:"kΩ",a:v/1000,s:`${v} Ω ÷ 1000 = ${de(v/1000,3)} kΩ`}},
+     ()=>{const v=pick([100,174,225,95]);return{t:`${v} MHz in kHz`,u:"kHz",a:v*1000,s:`${v} MHz · 1000 = ${(v*1000).toLocaleString("de-DE")} kHz`}},
+     ()=>{const v=pick([2200,4700,1000,680]);return{t:`${v} µF in mF`,u:"mF",a:v/1000,s:`${v} µF ÷ 1000 = ${de(v/1000,3)} mF`}},
+     ()=>{const v=pick([30,45,90,150]);return{t:`${v} min in h`,u:"h",a:v/60,s:`${v} min ÷ 60 = ${de(v/60,2)} h`}}];
+   const x=pick(tasks)();
+   return{text:`Rechne um: ${x.t}`,given:[],unit:x.u,ans:x.a,tol:0.005,steps:x.s};}}
+};
+let calcState=null,tally=store.get("tally",{r:0,n:0});
+function renderCalcSelect(){
+  const s=$("#calcType");
+  s.innerHTML=`<option value="mix">Gemischt</option>`+Object.entries(CALC).map(([k,v])=>`<option value="${k}">${esc(v.name)}</option>`).join("");
+  s.onchange=newCalc;
+}
+function newCalc(){
+  const sel=$("#calcType").value,key=sel==="mix"?pick(Object.keys(CALC)):sel;
+  calcState={key,...CALC[key].gen(),done:false};renderCalc();
+}
+function renderCalc(){
+  const c=calcState;
+  $("#calc").innerHTML=`<div class="card">
+    <div class="qmeta"><span>${esc(CALC[c.key].name)}</span><span class="tally">Richtig: ${tally.r} / ${tally.n}</span></div>
+    <div class="qtext" style="font-weight:500">${esc(c.text)}</div>
+    ${c.given.length?`<dl class="given" style="margin:0">${c.given.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`:""}
+    <form class="ansrow" id="calcForm" autocomplete="off">
+      <input type="text" id="calcIn" inputmode="decimal" placeholder="Ergebnis" aria-label="Ergebnis"><span class="unit">${esc(c.unit)}</span>
+      <button type="submit" class="primary">Prüfen</button>
+      <button type="button" id="calcShow">Lösung zeigen</button>
+    </form>
+    <div id="calcOut"></div>
+    <div class="row end"><button type="button" id="calcNew">Neue Aufgabe</button></div></div>`;
+  $("#calcForm").onsubmit=e=>{e.preventDefault();check(false)};
+  $("#calcShow").onclick=()=>check(true);
+  $("#calcNew").onclick=newCalc;
+}
+function check(reveal){
+  const c=calcState,raw=$("#calcIn").value.trim().replace(/\s/g,"").replace(",",".");
+  const v=parseFloat(raw);
+  if(!reveal&&(raw===""||isNaN(v))){$("#calcOut").innerHTML=`<div class="explain no"><strong>Keine Zahl erkannt</strong>Bitte nur die Zahl eingeben, z. B. 12,5.</div>`;return;}
+  const ok=!reveal&&Math.abs(v-c.ans)<=Math.max(Math.abs(c.ans)*c.tol,0.005);
+  if(!c.done){tally.n++;if(ok)tally.r++;store.set("tally",tally);c.done=true;}
+  $("#calcOut").innerHTML=`<div class="explain ${reveal?"":ok?"ok":"no"}"><strong>${reveal?"Lösung":ok?"Richtig":"Nicht ganz"}: ${de(c.ans,2)} ${esc(c.unit)}</strong><pre class="steps">${esc(c.steps)}</pre></div>`;
+  $(".tally").textContent=`Richtig: ${tally.r} / ${tally.n}`;
+}
+
+/* ---------- Formeln ---------- */
+const F=[
+["Wellenlänge","λ = c / f","c = 300 000 km/s · Antenne optimal λ/4"],
+["Leistung","P = U · I","auch P = I² · R = U² / R"],
+["Ohmsches Gesetz","U = R · I","bei Lautsprechern R ≈ Z"],
+["Wirkungsgrad","η = P_ab / P_zu","immer < 1, Rest = Wärme"],
+["Strom Endstufe","I = P_ab / (η · U)","erst P_zu, dann I"],
+["Reihenschaltung","Z = Z1 + Z2 + …","2 × 4 Ω = 8 Ω"],
+["Parallel (gleiche Z)","Z = Z1 / n","2 × 4 Ω = 2 Ω"],
+["Parallel (allgemein)","1/Z = 1/Z1 + 1/Z2","Z = Z1·Z2 / (Z1+Z2)"],
+["Leiterwiderstand","R = l / (κ · A)","Kupfer κ = 56 m/(Ω·mm²)"],
+["Querschnitt (Masse über Karosserie)","A = I · l / (κ · ΔU)","danach Normquerschnitt"],
+["Querschnitt (Hin + Rück)","A = 2 · l · I / (κ · ΔU)","beide Leitungen zählen"],
+["Spannungsfall","ΔU = I · R_Leitung","möglichst klein halten"],
+["SNR Spannung","SNR = 20 · log(U_S / U_R)","in dB, groß = gut"],
+["SNR Leistung","SNR = 10 · log(P_S / P_R)","+3 dB = doppelte Leistung"],
+["Batteriekapazität","C = I · t","Ah = A · h"],
+["Stützlast min.","S ≥ 4 % · m_Anhänger","mindestens 25 kg"],
+["Weichen-Steilheit","6 dB/Oktave je Ordnung","2. Ordnung = 12 dB/Okt."],
+["Vorsätze","µ 10⁻⁶ · m 10⁻³ · k 10³ · M 10⁶","1 mA = 0,001 A"]
+];
+function renderFormulas(){
+  $("#formulas").innerHTML=F.map(([n,e,h])=>`<div class="f"><span class="n">${esc(n)}</span><span class="e">${esc(e)}</span><span class="h">${esc(h)}</span></div>`).join("");
+  $("#normA").innerHTML=NORM_A.map(v=>`<span>${de(v,2)}</span>`).join("");
+  $("#normF").innerHTML=NORM_F.map(v=>`<span>${de(v,1)}</span>`).join("");
+}
+
+/* ---------- Navigation ---------- */
+const VIEWS=["themen","quiz","rechnen","formeln"];
+function route(){
+  const v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"themen";
+  VIEWS.forEach(x=>{$("#v-"+x).hidden=x!==v});
+  document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.dataset.v===v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  if(v==="quiz")renderQuiz();
+}
+renderTopics();updateProgress();renderFormulas();renderCalcSelect();newCalc();
+window.addEventListener("hashchange",route);route();
+})();
+</script>
+
+</body>
+</html>
