@@ -1,0 +1,357 @@
+<title>Fahrwerk-Trainer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: eine Spalte wie ein Prüfungsbogen, Werkstatt-Stahlblau mit Signalorange für die aktive Auswahl */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#cdd5dd;
+  --steel:#2c4a66; --accent:#e0661b; --ok:#1f7a4a; --okbg:#e2f3e9; --bad:#b3261e; --badbg:#fbe7e5;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11161c; --panel:#1a2129; --ink:#e6ebf0; --muted:#97a3b0; --line:#2f3a46;
+  --steel:#8fb3d6; --accent:#f08a45; --ok:#5cc58c; --okbg:#173326; --bad:#f08a80; --badbg:#3a1d1b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161c; --panel:#1a2129; --ink:#e6ebf0; --muted:#97a3b0; --line:#2f3a46;
+  --steel:#8fb3d6; --accent:#f08a45; --ok:#5cc58c; --okbg:#173326; --bad:#f08a80; --badbg:#3a1d1b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font:700 2rem/1 var(--display);letter-spacing:.01em;margin:0;color:var(--steel)}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:.9rem;margin:0}
+h2{font:700 1.3rem/1.15 var(--display);margin:0;text-wrap:balance}
+.label{font:600 .72rem/1 var(--body);text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:7px 13px;font:500 .92rem var(--body);cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--ink)}
+.chip small{font-family:var(--mono);color:var(--muted);margin-left:4px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.btn{border:0;border-radius:8px;padding:13px 16px;font:600 1rem var(--body);cursor:pointer;background:var(--steel);color:var(--panel);text-align:left;display:flex;flex-direction:column;gap:2px}
+.btn small{font-weight:400;opacity:.85;font-size:.82rem}
+.btn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.primary{background:var(--accent);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{display:flex;flex-direction:column;gap:4px}
+.stat b{font:500 1.4rem var(--mono);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.link{background:none;border:0;color:var(--steel);font:600 .95rem var(--body);cursor:pointer;padding:4px 0}
+.qnum{font:500 .85rem var(--mono);color:var(--muted)}
+figure{margin:0;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;cursor:zoom-in}
+figure img{display:block;margin:0 auto;max-height:280px;width:auto;max-width:100%}
+figcaption{font-size:.78rem;color:#5b6876;text-align:center;padding-top:4px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;background:transparent;color:var(--ink);border:1.5px solid var(--line);border-radius:8px;padding:11px 13px;font:400 1rem/1.4 var(--body);cursor:pointer}
+.opt .k{font:600 .95rem var(--mono);color:var(--muted);min-width:1.2em}
+.opt:hover:not(:disabled){border-color:var(--steel)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--ok);background:var(--okbg)}
+.opt.wrong{border-color:var(--bad);background:var(--badbg)}
+.opt.right .k{color:var(--ok)} .opt.wrong .k{color:var(--bad)}
+table.mini{border-collapse:collapse;width:100%;font-size:.95rem}
+.mini td{padding:2px 6px 2px 0}
+.fb{border-radius:8px;padding:12px 14px;font-size:.95rem}
+.fb.ok{background:var(--okbg)} .fb.no{background:var(--badbg)}
+.fb strong{display:block;margin-bottom:2px}
+.card{min-height:200px;justify-content:center}
+.answer{border-top:1px dashed var(--line);padding-top:14px;white-space:pre-line}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1 1 140px;align-items:center;text-align:center}
+.ok-t{color:var(--ok)} .bad-t{color:var(--bad)}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20;cursor:zoom-out}
+.zoom[hidden]{display:none}
+.zoom img{max-width:100%;max-height:100%;background:#fff;border-radius:6px}
+.note{font-size:.85rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<div class="wrap" id="app"></div>
+<div class="zoom" id="zoom" hidden><img id="zoomimg" alt=""></div>
+
+<script>
+const IMG = n => "img/" + n + ".jpg";
+const CH = {"18.1":"Fahrdynamik","18.2":"Lenkung","18.3":"Radstellungen","18.4":"Lenkgetriebe"};
+
+/* Multiple-Choice: Seiten 169–173. a = Index der richtigen Antwort (0=a … 3=d) */
+const Q = [
+ {id:"169-01",ch:"18.1",q:"Um welche Achsen bewegt sich ein Fahrzeug beim Kurvenfahren, und welche Schwingungsarten können auftreten?",img:"p169_bild1",
+  o:["Hochachse – Gieren","Längsachse – Wanken; Hochachse – Schleudern","Querachse – Nicken","Hochachse – Heben und Senken"],a:1,
+  e:"In der Kurve neigt sich der Aufbau um die Längsachse (Wanken) und dreht sich um die Hochachse (Schleudern/Gieren). Nicken um die Querachse entsteht beim Bremsen und Beschleunigen."},
+ {id:"169-02",ch:"18.1",q:"Welche Schwingungsart tritt beim Bremsen bzw. Beschleunigen um die Fahrzeug-Querachse auf?",
+  o:["Schleudern","Kippen","Nicken","Heben und Senken"],a:2,e:"Die Drehbewegung um die Querachse heißt Nicken."},
+ {id:"169-03",ch:"18.1",q:"Welche Aussage zum Übersteuern eines Kraftfahrzeugs ist richtig?",
+  o:["Das Fahrzeug hat kleinere Lenkkräfte","Das Fahrzeug bricht vorne aus","Das Fahrzeug hat größere Lenkkräfte","Das Fahrzeug bricht hinten aus"],a:3,
+  e:"Übersteuern: Die Schräglaufwinkel hinten sind größer als vorne. Das Fahrzeug fährt einen kleineren Radius und bricht mit dem Heck aus."},
+ {id:"169-04",ch:"18.1",q:"Welche Aussage zum Untersteuern eines Kraftfahrzeugs ist richtig?",
+  o:["Das Fahrzeug fährt eine kleinere Kurve als angesteuert wurde","Das Fahrzeug hat kleinere Lenkkräfte","Das Fahrzeug fährt eine größere Kurve als angesteuert wurde","Das Fahrzeug bricht hinten aus"],a:2,
+  e:"Untersteuern: Die Schräglaufwinkel vorne sind größer. Das Fahrzeug schiebt über die Vorderräder nach außen und fährt einen größeren Radius."},
+ {id:"169-L01",ch:"18.2",q:"In welcher Antwort sind die Bauteile der Lenkung richtig benannt?",img:"p169_bild2",
+  o:["1 Lenkspindel · 2 Lenkstange · 3 Spurstange · 4 Lenkrad","1 Spurstangenhebel · 2 Lenkspindel · 3 Lenkgetriebe · 4 Spurstange","1 Spurstange · 2 Lenkspindel · 3 Lenkgetriebe · 4 Spurstangenhebel","1 Spurstange · 2 Lenkspindel · 3 Lenkgetriebe · 4 Lenkrad"],a:3,
+  e:"1 Spurstange, 2 Lenkspindel, 3 Lenkgetriebe, 4 Lenkrad."},
+ {id:"169-L02",ch:"18.2",q:"Welche Lenkungsbauart ist im Bild dargestellt?",img:"p169_bild3",
+  o:["Drehschemellenkung","Achsschenkellenkung","Lenktrapezlenkung","Schwenkachsenlenkung"],a:1,
+  e:"Jedes Rad schwenkt mit seinem Achsschenkel um eine eigene Schwenkachse: Achsschenkellenkung."},
+ {id:"169-L03",ch:"18.2",q:"Das Lenktrapez wird gebildet durch …",
+  o:["die Stellung der Achsschenkel zu den Spurstangen","die Spurstangen und die beiden Spurstangenhebel","die Spurstangen und die Achszapfen","die Stellung der Federbeine zur Radebene"],a:1,
+  e:"Spurstange, Spurstangenhebel und Vorderachse bilden das Lenktrapez."},
+ {id:"170-04",ch:"18.2",q:"Welche Aussage zu der dargestellten Lenkung ist richtig?",img:"p169_bild2",
+  o:["Das kurvenäußere Rad wird stärker eingeschlagen","Das kurveninnere Rad wird weniger eingeschlagen","Die geneigten Schwenkachsen bewirken ein stärkeres Einschlagen des kurveninneren Rades","Das Lenktrapez bewirkt ein stärkeres Einschlagen des kurveninneren Rades"],a:3,
+  e:"Das Lenktrapez sorgt dafür, dass das kurveninnere Rad stärker eingeschlagen wird als das kurvenäußere."},
+ {id:"170-05",ch:"18.2",q:"Was versteht man unter dem Spurdifferenzwinkel?",
+  o:["Es ist der Winkel, mit dem das Rad auf der Fahrbahn steht","Es ist der Winkel zwischen Spurhebel und Spurstange","Es ist der Winkel, um den die Drehachse des Achsschenkels oben nach innen geneigt ist","Es ist die Differenz der Einschlagwinkel der Vorderräder"],a:3,
+  e:"Der Spurdifferenzwinkel ist der Winkel, um den das kurveninnere Rad stärker eingeschlagen ist als das kurvenäußere. Antwort c beschreibt die Spreizung."},
+ {id:"170-06",ch:"18.2",q:"Was versteht man unter dem Schräglaufwinkel? Den Winkel, …",
+  o:["den die Schwenkachse zur Fahrtrichtung bildet","den die Radebene zur Fahrtrichtung bildet","den die Schwenkachse längs zur Fahrtrichtung bildet","den die Radebene quer zur Fahrtrichtung bildet"],a:1,
+  e:"Schräglaufwinkel α: Winkel zwischen Radebene und tatsächlicher Bewegungsrichtung des Rades."},
+ {id:"170-07",ch:"18.2",q:"Wie wird der Spurdifferenzwinkel an den Vorderrädern überprüft? Durch Messung des Einschlagwinkels bei …",
+  o:["Einschlag der Räder um 20° nach rechts","Einschlag der Räder um 20° nach links","Einschlagen der Räder von Anschlag zu Anschlag","Einschlagen der Räder um 20° nach rechts oder 20° nach links"],a:3,
+  e:"Gemessen wird beim Einschlag um 20° nach rechts und um 20° nach links, damit beide Seiten geprüft sind."},
+ {id:"170-08",ch:"18.2",q:"Welche Aussage über die Radstellung des Fahrzeugs bei Kurvenfahrt trifft zu? (M = Kurvenmittelpunkt)",img:"p170_q08",
+  o:["Der Nachlauf der Vorderachse ist zu gering","Der Lenkrollradius ist falsch eingestellt","Der Einschlagwinkel des kurvenäußeren Rades ist zu gering","Der Einschlagwinkel des kurveninneren Rades ist zu groß"],a:3,
+  e:"Im Bild ist das rechte (kurveninnere) Rad viel stärker eingeschlagen als nötig. Die Radachsen treffen sich deshalb nicht im Kurvenmittelpunkt M."},
+ {id:"170-09",ch:"18.2",q:"Welches Bauteil wird bei einem Zahnstangenlenkgetriebe im Vergleich zu einem Kugelumlauflenkgetriebe nicht benötigt?",
+  o:["Lenkstockhebel","Spurstange","Lenkhebel","Lenksäule"],a:0,
+  e:"Bei der Zahnstangenlenkung schiebt die Zahnstange die Spurstangen direkt. Einen Lenkstockhebel braucht nur das Kugelumlauf- bzw. Schneckengetriebe."},
+ {id:"170-R01",ch:"18.3",q:"Welche Aussage zum Bild ist richtig?",img:"p170_sturz",
+  t:[["Bild A","Bild B"],["negativer Sturz","positiver Sturz"],["positiver Sturz","negativer Sturz"],["positiver Sturz","positiver Sturz"],["negativer Sturz","negativer Sturz"]],a:1,
+  e:"Die Aufhängung (Fahrzeugseite) ist rechts. Bild A: Rad oben nach außen geneigt = positiver Sturz. Bild B: oben nach innen geneigt = negativer Sturz."},
+ {id:"171-02",ch:"18.3",q:"Welche Radaufhängung bewirkt beim Einfedern weder Spur- noch Sturzänderung?",
+  o:["Doppelquerlenkerachse","Pendelachse","Schräglenkerachse","Längslenkerachse"],a:3,
+  e:"Der Längslenker schwingt in Fahrtrichtung. Das Rad bewegt sich nur auf und ab, Spur und Sturz bleiben gleich."},
+ {id:"171-03",ch:"18.3",q:"Welche Aussage über die Vorderachsgeometrie am Pkw ist richtig?",
+  o:["Der Spurdifferenzwinkel hängt vom Sturz des Rades ab","Heckgetriebene Fahrzeuge haben an den gelenkten Vorderrädern Vorlauf, da die Räder geschoben werden","Beim Lenkeinschlag muss das kurvenäußere Rad stärker eingeschlagen werden als das kurveninnere Rad","Der Lenkrollradius wird durch Sturz und Spreizung beeinflusst"],a:3,
+  e:"Wo die Lenkachse die Fahrbahn trifft, hängt von ihrer Neigung (Spreizung) und von der Radneigung (Sturz) ab. Daraus ergibt sich der Lenkrollradius."},
+ {id:"171-04",ch:"18.3",q:"Was versteht man unter der Spreizung?",
+  o:["Schrägstellung der Radebene quer zur Fahrzeuglängsachse","Schrägstellung der Schwenkachse quer zur Fahrzeuglängsachse","Schrägstellung des Querlenkers gegenüber der Waagerechten","Schrägstellung der Schwenkachse in Richtung der Fahrzeuglängsachse"],a:1,
+  e:"Spreizung: Neigung der Lenkdrehachse quer zur Fahrzeuglängsachse. a ist der Sturz, d der Nachlauf."},
+ {id:"171-05",ch:"18.3",q:"Wie wird der im Bild dargestellte Abstand R₀ genannt?",img:"p171_bild1",
+  o:["negativer Lenkrollradius","positiver Lenkrollradius","positive Vorspur","negative Vorspur"],a:1,
+  e:"Die verlängerte Lenkachse trifft die Fahrbahn innerhalb der Radaufstandsmitte (zur Fahrzeugmitte hin). Das ist ein positiver Lenkrollradius."},
+ {id:"171-06",ch:"18.3",q:"Welche beiden Radeinstellgrößen sind im Bild dargestellt?",img:"p171_bild1",
+  o:["Negativer Sturz und Nachlauf","Spreizung und positiver Lenkrollradius","Positiver Sturz und Nachlauf","Negativer Sturz und negativer Lenkrollradius"],a:1,
+  e:"Das Bild ist eine Ansicht von vorn, also kann kein Nachlauf zu sehen sein. Zu sehen sind die geneigte Lenkachse (Spreizung) und der positive Lenkrollradius."},
+ {id:"171-07",ch:"18.3",q:"Beim Einfedern der im Bild dargestellten Vorderradaufhängung (Federbein) ändert sich …",img:"p171_bild1",
+  o:["der Sturz, aber nicht die Spurweite","die Spurweite, aber nicht der Sturz","weder der Sturz noch die Spurweite","der Sturz und die Spurweite"],a:3,
+  e:"Der Querlenker schwenkt auf einem Kreisbogen. Beim Einfedern wandert das Rad seitlich, und das schräg stehende Federbein kippt mit. Sturz und Spurweite ändern sich."},
+ {id:"171-08",ch:"18.3",q:"Welche Radaufhängung bewirkt beim Einfedern keine Sturzänderung?",
+  o:["Doppelquerlenkerachse","Pendelachse","Schräglenkerachse","Längslenkerachse"],a:3,
+  e:"Beim Längslenker liegt die Drehachse quer zum Fahrzeug, das Rad kippt daher nicht seitlich."},
+ {id:"171-09",ch:"18.3",q:"In welcher Antwort sind die Aussagen zum Lenkrollradius richtig? (Bilder von links nach rechts)",img:"p171_bild2",
+  t:[["links","Mitte","rechts"],["negativ","null","positiv"],["positiv","null","negativ"],["positiv","null","positiv"],["negativ","null","negativ"]],a:0,
+  e:"Links trifft die Lenkachse die Fahrbahn außerhalb der Radmitte: negativ. Mitte genau in der Radmitte: null. Rechts innerhalb (zur Fahrzeugmitte): positiv."},
+ {id:"172-10",ch:"18.3",q:"Welche Aussage zur Spreizung ist richtig?",
+  o:["Das Rad wird gezogen und bekommt Richtungsstabilität","Eine große Spreizung vergrößert die Spurweite und verbessert das Lenken","Die Spreizung bewirkt Rückstellkräfte an der Lenkung bei Kurvenfahrt","Die Spreizung bewirkt einen negativen Sturz"],a:2,
+  e:"Beim Einschlagen hebt die Spreizung das Fahrzeug vorne an. Die Gewichtskraft drückt die Räder zurück in Geradeausstellung."},
+ {id:"172-11",ch:"18.3",q:"Welche Radstellungsgröße ist im Bild dargestellt?",img:"p172_bild1",
+  o:["Spur","Spreizung","Nachlauf","Sturz"],a:2,
+  e:"Die Gabel ist nach hinten geneigt. Die Lenkachse trifft die Fahrbahn vor dem Radaufstandspunkt: Nachlauf."},
+ {id:"172-12",ch:"18.3",q:"Welche Radstellungsgröße ist im Bild dargestellt?",img:"p172_bild2",
+  o:["Nachlaufwinkel","Spreizungswinkel","Spurdifferenzwinkel","Positiver Lenkrollradius"],a:1,
+  e:"Ansicht von vorn mit schräg nach innen geneigtem Federbein: Spreizungswinkel."},
+ {id:"172-14",ch:"18.3",q:"Wodurch werden die Rückstellkräfte der Lenkung erzeugt?",
+  o:["Sturz und Vorspur","Vorspur und Nachlauf","Nachspur und Vorlauf","Nachlauf und Spreizung"],a:3,
+  e:"Der Nachlauf zieht das Rad hinter der Lenkachse her, die Spreizung hebt das Fahrzeug beim Einschlagen an. Beide stellen die Lenkung zurück."},
+ {id:"172-15",ch:"18.3",q:"Durch den Einbau anderer Felgen wurde die Spurweite vergrößert. Welche Radeinstellgröße ändert sich?",
+  o:["Lenkrollradius","Vorspur","Nachspur","Nachlauf"],a:0,
+  e:"Andere Einpresstiefe verschiebt die Radmitte nach außen, die Lenkachse bleibt. Der Abstand zwischen beiden auf der Fahrbahn, der Lenkrollradius, ändert sich."},
+ {id:"172-16",ch:"18.3",q:"In welcher Antwort sind die Radeinstellgrößen des Bildes richtig benannt?",img:"p172_bild3",
+  o:["γ Spreizung · δ Sturz · R₀ negativer Lenkrollradius","γ Sturz · δ Spreizung · R₀ positiver Lenkrollradius","γ Sturz · δ Spreizung · R₀ negativer Lenkrollradius","γ Spreizung · δ Sturz · R₀ positiver Lenkrollradius"],a:1,
+  e:"γ (Gamma) ist der Sturz, δ (Delta) die Spreizung. Im Bild liegt R₀ zur Fahrzeugmitte hin: positiver Lenkrollradius. Vergleiche die Zeichnung zu „Sturz“ auf den Karteikarten."},
+ {id:"173-17",ch:"18.3",q:"Welchen Einfluss auf das Fahrverhalten hat die Vorspur?",
+  o:["Sie schlägt die Räder unterschiedlich ein und bewirkt gutes Abrollen der Räder","Sie verringert den Lenkrollradius und verbessert die Spurhaltung","Sie verhindert Flattern und der Lenkrollradius bewirkt Rückstellkräfte","Sie verhindert Flattern und der Lenkrollradius bewirkt gute Spurhaltung"],a:3,
+  e:"Vorspur gleicht das Auseinanderstreben der Räder aus, das der positive Lenkrollradius durch den Rollwiderstand erzeugt. So flattern die Räder nicht und das Fahrzeug hält die Spur. Rückstellkräfte kommen von Nachlauf und Spreizung."},
+ {id:"173-18",ch:"18.3",q:"Wie wird die im Bild dargestellte Radeinstellgröße benannt?",img:"p173_bild1",
+  o:["Nachspur","Nachlauf","Spreizung","Vorspur"],a:3,
+  e:"Draufsicht: Die Räder stehen vorne enger zusammen als hinten. Das ist Vorspur."},
+ {id:"173-19",ch:"18.3",q:"Wie kann die im Bild dargestellte Radeinstellgröße (Vorspur) ermittelt werden?",img:"p173_bild1",
+  o:["Durch Differenzbildung von l₂ und l₁","Durch Differenzbildung der Vorspurwinkel","Durch Addition der Abstände l₁ und l₂","Durch Mittelwertbildung von l₁ und l₂"],a:0,
+  e:"Vorspur = l₂ − l₁: Abstand der Felgenhörner hinten minus Abstand vorne, jeweils in Achshöhe gemessen."},
+ {id:"173-20",ch:"18.3",q:"Bei welcher Radaufhängung werden Spuränderungen beim Aus- und Einfedern klein gehalten?",
+  o:["Durch Verwendung unterschiedlich langer Querlenker","Durch Verwendung gleichlanger Querlenker","Durch Einstellen eines negativen Sturzes","Durch Verwendung einer größeren Vorspur"],a:0,
+  e:"Ein kurzer oberer und ein langer unterer Querlenker lassen das Rad beim Federn fast senkrecht laufen. Die Spurweite ändert sich kaum, dafür etwas der Sturz."},
+ {id:"173-G01",ch:"18.4",q:"Welche Aufgabe hat das Lenkgetriebe?",
+  o:["Es soll die Räder exakt führen","Es soll die Kräfte wegen des guten Fahrbahnkontakts möglichst groß halten","Es soll die Drehbewegung am Lenkrad in eine Schubbewegung der Spurstangen umwandeln","Es soll die Flatterneigung der Räder gering halten"],a:2,
+  e:"Das Lenkgetriebe wandelt die Drehbewegung in eine Schubbewegung um und übersetzt dabei das Handmoment."},
+ {id:"173-G02",ch:"18.4",q:"Welches Lenkgetriebe ist im Bild dargestellt?",img:"p173_bild2",
+  o:["Zahnstangen-Lenkgetriebe","Schrauben-Lenkgetriebe","Kugelumlauf-Lenkgetriebe","Schnecken-Rollen-Lenkgetriebe"],a:3,
+  e:"Eine taillierte (globoidförmige) Schnecke treibt eine Rolle an, die auf der Lenkstockwelle sitzt: Schnecken-Rollen-Lenkgetriebe."},
+ {id:"173-G03",ch:"18.4",q:"Welches Lenkgetriebe ist im Bild dargestellt?",img:"p173_bild3",
+  o:["Zahnstangen-Lenkgetriebe","Schrauben-Lenkgetriebe","Kugelumlauf-Lenkgetriebe","Schnecken-Rollen-Lenkgetriebe"],a:0,
+  e:"Ritzel, Zahnstange im Gehäuse, Gummibalg und Druckstück: Zahnstangen-Lenkgetriebe."},
+];
+
+/* Karteikarten: Seiten 203–205 */
+const F = [
+ {ch:"18.1",q:"Welche Baugruppen gehören zum Fahrwerk eines Fahrzeugs?",a:"Radaufhängung, Lenkung, Federung, Bremsen, Räder mit Bereifung"},
+ {ch:"18.1",q:"Was versteht man unter Fahrdynamik?",a:"Die Fahrdynamik befasst sich mit der Wirkung der am Fahrzeug angreifenden Kräfte beim Fahren und den sich daraus ergebenden Bewegungen am Fahrzeug."},
+ {ch:"18.1",q:"Wie heißen die drei Raumachsen eines Fahrzeugs und wie nennt man die Bewegungen um sie?",a:"Längsachse → Kippen (Wanken)\nQuerachse → Nicken\nHochachse → Gieren, Schleudern",img:"p203_achsen"},
+ {ch:"18.1",q:"Wie ist die Symmetrieachse eines Fahrzeugs definiert?",a:"Sie verläuft in Längsrichtung des Fahrzeugs durch die Mitten von Vorder- und Hinterachse."},
+ {ch:"18.1",q:"Was versteht man unter dem Wankzentrum (Momentanzentrum)?",a:"Es ist der Punkt W auf einer in Achsmitte gedachten Senkrechten, um den sich der Fahrzeugaufbau unter der Einwirkung von Seitenkräften Fs dreht.",img:"p203_wank"},
+ {ch:"18.1",q:"Wie wird die Wankachse eines Fahrzeugs gebildet?",a:"Durch Verbindung der Wankzentren von Vorderachse Wv und Hinterachse Wh. Sie fällt meist nach vorne ab, da das Wankzentrum vorne tiefer liegt als hinten.",img:"p203_wankachse"},
+ {ch:"18.1",q:"Wie wird die geometrische Fahrachse bestimmt?",a:"Sie wird durch die Stellung der Hinterräder gebildet und ist die Winkelhalbierende der Gesamtspur der Hinterräder.",img:"p203_fahrachse"},
+ {ch:"18.1",q:"Definieren Sie den Radversatz.",a:"Der Radversatz ist der Winkel, um den z. B. die beiden Hinterräder gegeneinander versetzt sind. Er ist positiv (+), wenn das Rad nach vorn versetzt ist."},
+ {ch:"18.1",q:"Was versteht man unter dem Schräglaufwinkel?",a:"Der Schräglaufwinkel α ist der Winkel zwischen der Radebene und der tatsächlichen Bewegungsrichtung des Rades."},
+ {ch:"18.1",q:"Was versteht man unter dem Schwimmwinkel?",a:"Es ist der Winkel zwischen der Fahrtrichtung und der Fahrzeuglängsachse."},
+ {ch:"18.1",q:"Was versteht man unter Übersteuern?",a:"Die Schräglaufwinkel der Hinterräder sind größer als die der Vorderräder (αH > αV). Das Fahrzeug will einen kleineren Kurvenradius fahren als eingelenkt und bricht mit dem Heck aus.",img:"p204_steuern"},
+ {ch:"18.1",q:"Was versteht man unter Untersteuern?",a:"Die Schräglaufwinkel der Vorderräder sind größer als die der Hinterräder (αV > αH). Das Fahrzeug will einen größeren Kurvenradius fahren als eingelenkt und schiebt über die Vorderräder nach außen.",img:"p204_steuern"},
+ {ch:"18.1",q:"Erläutern Sie die Begriffe Gieren, Wanken, Nicken.",a:"Gieren: Drehbewegung um die Hochachse.\nWanken: Kippbewegung um die Wankachse.\nNicken: Drehbewegung um die Querachse."},
+ {ch:"18.2",q:"Weshalb muss die Lenkung besonders sorgfältig überprüft und gewartet werden?",a:"Weil Fahrsicherheit und Fahrverhalten eines Kraftfahrzeugs wesentlich von der Funktionssicherheit der Lenkung abhängen."},
+ {ch:"18.2",q:"Welche Bauteile gehören zur Lenkung?",a:"Lenkrad, Lenkspindel, Lenkgetriebe, Spurstange, Spurstangenhebel"},
+ {ch:"18.2",q:"Welche Aufgaben hat die Lenkung?",a:"• Einschlagen der Vorderräder\n• Ermöglichung unterschiedlicher Einschlagwinkel\n• Verstärkung (Übersetzung) des durch die Handkraft am Lenkrad erzeugten Drehmoments"},
+ {ch:"18.2",q:"Was versteht man unter einer Achsschenkellenkung?",a:"Eine Lenkung, bei der jedes gelenkte Rad mit seinem Achsschenkel um eine eigene Achse, die Lenkdrehachse, geschwenkt werden kann."},
+ {ch:"18.2",q:"Welche Wirkung hat das Lenktrapez?",a:"Die gelenkten Räder können unterschiedlich stark eingeschlagen werden."},
+ {ch:"18.2",q:"Warum sind Kraftwagen mit einer Achsschenkellenkung ausgestattet?",a:"Damit beim Einschlagen der Räder um die Lenkdrehachse die Standfläche und dadurch die Standfestigkeit gleich groß bleibt."},
+ {ch:"18.2",q:"Was versteht man unter dem Spurdifferenzwinkel?",a:"Den Winkel, um den das kurveninnere Rad stärker eingeschlagen wird als das kurvenäußere."},
+ {ch:"18.2",q:"Wie müssen die gelenkten Räder beim Befahren einer Kurve eingeschlagen sein, damit sie einwandfrei abrollen?",a:"Das kurveninnere Rad muss stärker eingeschlagen sein als das kurvenäußere Rad.",img:"p205_spurdiff"},
+ {ch:"18.2",q:"Welche Bauteile bilden das Lenktrapez?",a:"Spurstange, Spurstangenhebel und Vorderachse",img:"p205_trapez"},
+ {ch:"18.3",q:"Was versteht man unter Sturz?",a:"Die Neigung der Radebene zu einer im Reifenaufstandspunkt errichteten Senkrechten, quer zur Fahrzeuglängsachse."},
+ {ch:"18.3",q:"Welchen Vorteil hat negativer Sturz?",a:"Negativer Sturz verbessert die Seitenführung bei Kurvenfahrt."},
+ {ch:"18.3",q:"Was versteht man unter positivem und negativem Sturz?",a:"Positiv: Die Radebene ist oben nach außen geneigt.\nNegativ: Die Radebene ist oben nach innen geneigt.",img:"p205_sturz"},
+ {ch:"18.3",q:"Was versteht man unter Spreizung?",a:"Die Schrägstellung der Lenkdrehachse bzw. des Achsschenkelbolzens quer zur Fahrzeuglängsachse gegenüber einer Senkrechten zur Fahrbahn."},
+ {ch:"18.3",q:"Was bewirkt die Spreizung bei positivem Lenkrollhalbmesser beim Einschlagen der Vorderräder?",a:"Das Fahrzeug wird vorne angehoben. Durch die Gewichtskraft entsteht ein Rückstellmoment, das die Räder selbsttätig geradezustellen versucht."},
+ {ch:"18.3",q:"Warum wird bei einer Achsvermessung nur der Sturzwinkel gemessen und im Bedarfsfall eingestellt?",a:"Spreizung und Sturz bilden in der Regel zusammen einen Winkel, der in seiner Größe immer gleich bleibt. Stimmt der Sturzwinkel, so ist auch der Spreizwinkel richtig."},
+ {ch:"18.3",q:"Welche Wirkung hat ein positiver Lenkrollhalbmesser?",a:"Eine am Rad angreifende Bremskraft schwenkt das Rad vorne nach außen."},
+];
+
+/* Speicher (nur in diesem Browser) */
+const KEY="fahrwerk-trainer-v1";
+let S={sel:Object.keys(CH),stats:{}};
+try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r)S=Object.assign(S,r)}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+const app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const fig=n=>n?`<figure data-z="${IMG(n)}"><img src="${IMG(n)}" alt="Abbildung zur Aufgabe" loading="lazy"><figcaption>Tippen zum Vergrößern</figcaption></figure>`:"";
+const isWeak=id=>{const s=S.stats[id];return s&&s.last===0};
+
+let run=null;
+
+function home(){
+  run=null;
+  const pool=Q.filter(q=>S.sel.includes(q.ch));
+  const fl=F.filter(f=>S.sel.includes(f.ch));
+  const seen=Q.filter(q=>S.stats[q.id]).length;
+  const known=Q.filter(q=>S.stats[q.id]&&S.stats[q.id].last===1).length;
+  const weak=pool.filter(q=>isWeak(q.id)).length;
+  app.innerHTML=`
+  <header><h1>Fahrwerk<span>-</span>Trainer</h1><p class="sub">Kap. 18 · Fahrwerk, Lenkung, Radstellungen</p></header>
+  <section class="panel">
+    <div class="label">Fortschritt</div>
+    <div class="stats">
+      <div class="stat"><b>${known}/${Q.length}</b><span class="note">zuletzt richtig</span></div>
+      <div class="stat"><b>${seen}</b><span class="note">schon geübt</span></div>
+      <div class="stat"><b>${Q.filter(q=>isWeak(q.id)).length}</b><span class="note">zum Wiederholen</span></div>
+    </div>
+    <div class="bar"><i style="width:${known/Q.length*100}%"></i></div>
+  </section>
+  <section class="panel">
+    <div class="label">Kapitel</div>
+    <div class="chips">${Object.entries(CH).map(([k,v])=>`<button class="chip" data-ch="${k}" aria-pressed="${S.sel.includes(k)}">${k} ${v}<small>${Q.filter(q=>q.ch===k).length}</small></button>`).join("")}</div>
+    <div class="modes">
+      <button class="btn primary" id="go" ${pool.length?"":"disabled"}>Prüfungsfragen<small>${pool.length} Fragen, gemischt</small></button>
+      <button class="btn" id="weak" ${weak?"":"disabled"}>Fehler wiederholen<small>${weak} falsch beantwortet</small></button>
+      <button class="btn alt" id="cards" ${fl.length?"":"disabled"}>Karteikarten<small>${fl.length} Fragen mit Antwort</small></button>
+    </div>
+  </section>
+  <p class="note">Dein Fortschritt wird nur in diesem Browser gespeichert. <button class="link" id="reset">Fortschritt löschen</button></p>`;
+  app.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{const k=b.dataset.ch;S.sel=S.sel.includes(k)?S.sel.filter(x=>x!==k):[...S.sel,k];save();home()});
+  go.onclick=()=>startQuiz(shuffle(pool));
+  weak.onclick=()=>startQuiz(shuffle(pool.filter(q=>isWeak(q.id))));
+  cards.onclick=()=>startCards(shuffle(fl));
+  reset.onclick=()=>{if(reset.dataset.c){S.stats={};save();home()}else{reset.dataset.c=1;reset.textContent="Wirklich löschen? Nochmal tippen"}};
+}
+
+function startQuiz(list){run={type:"q",list,i:0,score:0,wrong:[]};showQ()}
+
+function showQ(){
+  const {list,i}=run; if(i>=list.length) return result();
+  const q=list[i];
+  // Antwortreihenfolge bleibt wie im Buch (a–d), weil Tabellen-Fragen sich darauf beziehen
+  const opts=q.t?q.t.slice(1).map(r=>`<table class="mini"><tr>${r.map(c=>`<td>${esc(c)}</td>`).join("")}</tr></table>`):q.o.map(esc);
+  app.innerHTML=`
+  <div class="top"><button class="link" id="back">← Übersicht</button><span class="qnum">${i+1} / ${list.length}</span></div>
+  <div class="bar"><i style="width:${i/list.length*100}%"></i></div>
+  <section class="panel">
+    <div class="label">${q.ch} ${CH[q.ch]} · Seite ${q.id.slice(0,3)}</div>
+    <h2>${esc(q.q)}</h2>
+    ${fig(q.img)}
+    ${q.t?`<div class="note">Spalten: ${q.t[0].map(esc).join(" · ")}</div>`:""}
+    <div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}"><span class="k">${"abcd"[k]})</span><span>${o}</span></button>`).join("")}</div>
+    <div id="fb"></div>
+  </section>`;
+  back.onclick=home;
+  bindZoom();
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>answer(q,+b.dataset.k));
+}
+
+function answer(q,k){
+  const ok=k===q.a;
+  app.querySelectorAll(".opt").forEach(b=>{b.disabled=true;const n=+b.dataset.k;if(n===q.a)b.classList.add("right");else if(n===k)b.classList.add("wrong")});
+  const s=S.stats[q.id]||{r:0,f:0};ok?s.r++:s.f++;s.last=ok?1:0;S.stats[q.id]=s;save();
+  if(ok)run.score++;else run.wrong.push(q);
+  fb.innerHTML=`<div class="fb ${ok?"ok":"no"}"><strong class="${ok?"ok-t":"bad-t"}">${ok?"Richtig":"Falsch – richtig ist "+"abcd"[q.a]+")"}</strong>${esc(q.e)}</div>
+  <div class="row" style="margin-top:12px"><button class="btn primary" id="next">${run.i+1<run.list.length?"Nächste Frage":"Auswertung"}</button></div>`;
+  next.onclick=()=>{run.i++;showQ();scrollTo(0,0)};
+  next.focus({preventScroll:true});
+}
+
+function result(){
+  const {score,list,wrong}=run, p=Math.round(score/list.length*100);
+  app.innerHTML=`
+  <section class="panel">
+    <div class="label">Auswertung</div>
+    <h2>${score} von ${list.length} richtig (${p} %)</h2>
+    <div class="bar"><i style="width:${p}%"></i></div>
+    <p class="note">${p>=90?"Sehr gut, das sitzt.":p>=50?"Bestanden-Niveau. Wiederhole die falschen Fragen.":"Lies die Karteikarten durch und versuche es nochmal."}</p>
+    ${wrong.length?`<div class="label">Falsch beantwortet</div><ul>${wrong.map(q=>`<li>${esc(q.q)}<br><span class="ok-t">${"abcd"[q.a]}) ${esc(q.o?q.o[q.a]:q.t[q.a+1].join(" · "))}</span></li>`).join("")}</ul>`:""}
+    <div class="row">
+      ${wrong.length?`<button class="btn primary" id="rw">Fehler wiederholen</button>`:""}
+      <button class="btn alt" id="hm">Zur Übersicht</button>
+    </div>
+  </section>`;
+  hm.onclick=home;
+  if(wrong.length)rw.onclick=()=>startQuiz(shuffle(wrong));
+}
+
+function startCards(list){run={type:"c",list,i:0,open:false,known:0};showCard()}
+function showCard(){
+  const {list,i}=run;
+  if(i>=list.length){app.innerHTML=`<section class="panel"><h2>Alle ${list.length} Karten durch</h2><p class="note">${run.known} gewusst, ${list.length-run.known} noch üben.</p><div class="row"><button class="btn primary" id="again">Nochmal mischen</button><button class="btn alt" id="hm">Zur Übersicht</button></div></section>`;again.onclick=()=>startCards(shuffle(list));hm.onclick=home;return}
+  const c=list[i];
+  app.innerHTML=`
+  <div class="top"><button class="link" id="back">← Übersicht</button><span class="qnum">Karte ${i+1} / ${list.length}</span></div>
+  <div class="bar"><i style="width:${i/list.length*100}%"></i></div>
+  <section class="panel card">
+    <div class="label">${c.ch} ${CH[c.ch]}</div>
+    <h2>${esc(c.q)}</h2>
+    ${run.open?`<div class="answer">${esc(c.a)}</div>${fig(c.img)}`:`<p class="note">Überleg dir die Antwort, dann aufdecken.</p>`}
+  </section>
+  <div class="row">${run.open
+    ?`<button class="btn alt" id="no">Noch üben</button><button class="btn primary" id="yes">Gewusst</button>`
+    :`<button class="btn primary" id="show">Antwort zeigen</button>`}</div>`;
+  back.onclick=home; bindZoom();
+  if(run.open){
+    no.onclick=()=>{run.list.push(c);run.i++;run.open=false;showCard()};
+    yes.onclick=()=>{run.known++;run.i++;run.open=false;showCard()};
+  }else show.onclick=()=>{run.open=true;showCard()};
+}
+
+const zoom=document.getElementById("zoom"),zimg=document.getElementById("zoomimg");
+function bindZoom(){app.querySelectorAll("figure[data-z]").forEach(f=>f.onclick=()=>{zimg.src=f.dataset.z;zoom.hidden=false})}
+zoom.onclick=()=>zoom.hidden=true;
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape")zoom.hidden=true;
+  if(run&&run.type==="q"&&"abcd1234".includes(e.key)&&e.key.length===1){const k="abcd".indexOf(e.key)>=0?"abcd".indexOf(e.key):+e.key-1;const b=app.querySelector(`.opt[data-k="${k}"]:not(:disabled)`);if(b)b.click()}
+});
+home();
+</script>
